@@ -1,0 +1,28 @@
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+version = '1.0-SNAPSHOT'
+group = 'io.belov.grails'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    groovyVersion = '1.8.8'
+    slf4jVersion = '1.7.2'
+    spockVersion = '0.7-groovy-1.8'
+}
+
+dependencies {
+    groovy "org.codehaus.groovy:groovy-all:$groovyVersion" //add groovy support
+    compile 'commons-lang:commons-lang:2.6'
+    compile 'commons-io:commons-io:2.4'
+
+    //add logging support
+    compile "org.slf4j:slf4j-api:$slf4jVersion"
+    compile "ch.qos.logback:logback-classic:1.0.6"
+
+    //testing
+    testCompile "org.spockframework:spock-core:$spockVersion" //spock framework
+}

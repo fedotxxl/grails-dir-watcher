@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoders are assigned by default the type
+       ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="MAIN" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${mediaservice.backend.logs:-/var/log/TODO_CHANGE_APP_NAME}/TODO_CHANGE_APP_NAME.log</file>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover -->
+            <fileNamePattern>${spider.backend.logs:-/var/log/TODO_CHANGE_APP_NAME}/TODO_CHANGE_APP_NAME.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- keep 30 days' worth of history -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="STDOUT"/>
+        <!--<appender-ref ref="MAIN"/>-->
+    </root>
+
+    <logger name="io.belov.grails" level="debug" additivity="false">
+        <appender-ref ref="STDOUT" />
+        <!--<appender-ref ref="MAIN" />-->
+    </logger>
+
+</configuration>
