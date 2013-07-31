@@ -13,7 +13,7 @@ import static java.nio.file.StandardWatchEventKinds.*
 import static com.sun.nio.file.ExtendedWatchEventModifier.*
 
 @Slf4j
-class RecursiveDirectoryWatcher {
+class RecursiveDirectoryWatcher implements DirectoryWatcher {
 
     private static final WatchEvent.Kind[] watchEvents = [ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE]
 
@@ -41,7 +41,7 @@ class RecursiveDirectoryWatcher {
      *
      * @param active False if you want to stop watching
      */
-    public void setActive(boolean active) {
+    public void setActive(Boolean active) {
         this.active = active;
     }
 
@@ -50,6 +50,7 @@ class RecursiveDirectoryWatcher {
      *
      * @param listener The file listener
      */
+    @Override
     public void addListener(FileChangeListener listener) {
         listeners.add(listener);
     }
@@ -59,6 +60,7 @@ class RecursiveDirectoryWatcher {
      *
      * @param fileToWatch The file to watch
      */
+    @Override
     public void addWatchFile(Path fileToWatch) {
         log.debug("Watching file: " + fileToWatch);
 
@@ -71,6 +73,7 @@ class RecursiveDirectoryWatcher {
      * @param dir The directory
      * @param fileExtensions The extensions
      */
+    @Override
     public void addWatchDirectory(Path dir, FileFilter f = null) {
         log.debug("Watching dir: " + dir + "; filter: " + f);
 
@@ -145,6 +148,7 @@ class RecursiveDirectoryWatcher {
         }
     }
 
+    @Override
     void start() {
         log.info("Start watching file changes")
 
