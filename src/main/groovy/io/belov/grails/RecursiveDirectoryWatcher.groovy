@@ -26,6 +26,8 @@ class RecursiveDirectoryWatcher {
     private Map<Path, Set<FileFilter>> directories = [:].withDefault {[]}
     private List<FileChangeListener> listeners = []
 
+    private static final int EVENTS_DELAY = 50
+
     public RecursiveDirectoryWatcher() {
         try {
             this.watcher = FileSystems.getDefault().newWatchService();
@@ -214,16 +216,10 @@ class RecursiveDirectoryWatcher {
             while(active) {
                 synchronized (events) {
                     def triggered = []
-                    //trigger last event after 200ms
+                    //trigger last event after Xms
                     events.each { File file, Map info ->
-                        if (System.currentTimeMillis() - info.date > 200) {
-                            //let's trigger last event
-                            if (info.event == ENTRY_MODIFY) {
-                                fireOnChange(file);
-                            } else if (info.event == ENTRY_DELETE) {
-                                fireOnDelete(file);
-                            }
-
+                        if (System.currentTimeMillis() - info.date > EVENTS_DELAY) {
+                            fireEvent(info.event, file)
                             triggered << file
                         }
                     }
@@ -234,14 +230,36 @@ class RecursiveDirectoryWatcher {
                 }
 
                 //sleep
-                sleep(50)
+                sleep(EVENTS_DELAY)
             }
         }
     }
 
+    private fireEvent(WatchEvent.Kind event, File file) {
+        //let's trigger last event
+        if (event == ENTRY_MODIFY) {
+            fireOnChange(file)
+        } else if (event == ENTRY_DELETE) {
+            fireOnDelete(file)
+        } else if (event == ENTRY_CREATE) {
+            fireOnCreate(file)
+        }
+    }
+
     private addEvent(WatchEvent.Kind eventType, File file) {
+        log.trace "Event {} on {} is fired", eventType, file
+
         synchronized (events) {
-            events[file] = [event: eventType, date: System.currentTimeMillis()]
+            def doAddEvent = true
+
+            //special case - file creation. Create event should be saved
+            if (eventType == ENTRY_MODIFY && events[file]?.event == ENTRY_CREATE) {
+                doAddEvent = false
+            }
+
+            if (doAddEvent) {
+                events[file] = [event: eventType, date: System.currentTimeMillis()]
+            }
         }
     }
 
@@ -277,6 +295,16 @@ class RecursiveDirectoryWatcher {
 
         for (FileChangeListener listener : listeners) {
             listener.onDelete(file);
+        }
+    }
+
+    private void fireOnCreate(File file) {
+        if (file.isFile()) {
+            log.debug("File {} is created. Triggering listeners", file);
+
+            for (FileChangeListener listener : listeners) {
+                listener.onCreate(file);
+            }
         }
     }
 }

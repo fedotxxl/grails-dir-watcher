@@ -14,4 +14,6 @@ interface FileChangeListener {
     void onChange(File file);
 
     void onDelete(File file);
+
+    void onCreate(File file)
 }
