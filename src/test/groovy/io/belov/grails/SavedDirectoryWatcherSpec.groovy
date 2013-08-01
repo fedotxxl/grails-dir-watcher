@@ -11,6 +11,9 @@ class SavedDirectoryWatcherSpec extends Specification {
         Thread.start {
             def watcher = new SavedDirectoryWatcher(new RecursiveDirectoryWatcher())
             watcher.addWatchDirectory(Paths.get("D:/abc/123"))
+            watcher.addWatchDirectory(Paths.get("D:/abc/123/456"))
+            watcher.addWatchDirectory(Paths.get("D:/abc/123/456/678"))
+            watcher.addWatchDirectory(Paths.get("D:/abc/123/9"))
             watcher.start()
         }
 

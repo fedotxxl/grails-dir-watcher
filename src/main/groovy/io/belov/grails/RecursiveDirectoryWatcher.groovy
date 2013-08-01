@@ -251,8 +251,6 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
     }
 
     private addEvent(WatchEvent.Kind eventType, File file) {
-        log.trace "Event {} on {} is fired", eventType, file
-
         synchronized (events) {
             def doAddEvent = true
 

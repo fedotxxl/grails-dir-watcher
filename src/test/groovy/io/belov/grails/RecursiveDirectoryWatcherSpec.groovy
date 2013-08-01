@@ -29,6 +29,7 @@ class RecursiveDirectoryWatcherSpec extends Specification {
             def watcher = new RecursiveDirectoryWatcher()
             watcher.addWatchDirectory(Paths.get("D:/abc/w/"))
             watcher.addWatchDirectory(Paths.get("D:/abc/w/123"))
+            watcher.addWatchDirectory(Paths.get("D:/abc/w/123"), new FileExtensionFilter("txt"))
             watcher.addWatchDirectory(Paths.get("D:/abc/w/456"), new FileExtensionFilter("txt"))
             watcher.start()
         }

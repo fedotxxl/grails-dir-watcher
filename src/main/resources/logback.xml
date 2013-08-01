@@ -28,7 +28,7 @@
         <!--<appender-ref ref="MAIN"/>-->
     </root>
 
-    <logger name="io.belov.grails" level="debug" additivity="false">
+    <logger name="io.belov.grails" level="trace" additivity="false">
         <appender-ref ref="STDOUT" />
         <!--<appender-ref ref="MAIN" />-->
     </logger>

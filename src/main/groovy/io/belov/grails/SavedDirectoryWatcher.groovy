@@ -1,21 +1,18 @@
 package io.belov.grails
-
 import groovy.util.logging.Slf4j
-import groovyx.gpars.dataflow.Promise
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang.RandomStringUtils
 
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import java.util.concurrent.ThreadPoolExecutor
+import static io.belov.grails.FileUtils.*
 
 @Slf4j
 class SavedDirectoryWatcher implements DirectoryWatcher {
 
-    private Map<File, FileFilter> dirsWithFilters = new HashMap<>()
+    private Map<File, Set<FileFilter>> dirsWithFilters = [:].withDefault { [] as Set}
     private List<File> dirs = []
     private DirectoryWatcher watcher
     private Integer sleepTime = 5000
@@ -67,15 +64,11 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     void addWatchDirectory(Path dir, FileFilter filter = null) {
         def folder = getNormalizedFile(dir.toFile())
 
-        if (dirs.contains(folder)) {
-            log.warn("DirectoryWatcher already tracks changes in ${folder} (filter - ${dirsWithFilters[folder]}). You can't track the same folder twice")
-        } else {
-            dirs << folder
-            dirsWithFilters[folder] = filter
+        dirs << folder
+        dirsWithFilters[folder] << filter
 
-            if (folder.exists() && folder.directory) {
-                watcher.addWatchDirectory(dir, filter)
-            }
+        if (folder.exists() && folder.directory) {
+            watcher.addWatchDirectory(dir, filter)
         }
     }
 
@@ -100,20 +93,41 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
                 return null
             }   
         }
-        
+
+        def foldersToTrack = []
+        def foldersToTriggerCreateEvent = new FileTree()
+
         futures.eachWithIndex { Future future, i ->
             if (future) {
                 def isTracked = future.get()
                 if (!isTracked) {
-                    trackFolder(dirs[i])
+                    foldersToTrack << dirs[i]
                 }
             }
         }
+
+        foldersToTrack.each {
+            foldersToTriggerCreateEvent.add(it)
+            trackFolder(it)
+        }
+
+        foldersToTriggerCreateEvent.root.each {
+            triggerCreateEvent(it)
+        }
     }
     
-    private trackFolder(File file) {
-        log.info "Start tracking folder {} after delay", file
-        watcher.addWatchDirectory(file.toPath(), dirsWithFilters[file])
+    private trackFolder(File folder) {
+        log.info "Start tracking remembered folder {}", folder
+
+        def path = folder.toPath()
+
+        dirsWithFilters[folder].each { filter ->
+            watcher.addWatchDirectory(path, filter)
+        }
+    }
+
+    private triggerCreateEvent(File folder) {
+        log.info "Triggering create event for remembered folder {}", folder
     }
 
     private Future isFolderTracked(File folder) {
@@ -138,20 +152,5 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
         trackedFiles.remove(file)
 
         return tracked
-    }
-    
-    private getNormalizedFile(File file) {
-        return new File(file.canonicalPath)
-    }
-
-    private getNonExistingFile(File parent) {
-        def file = null
-
-        while (!file) {
-            file = new File(parent, RandomStringUtils.randomAlphabetic(5))
-            if (file.exists()) file = null
-        }
-
-        return file
     }
 }
