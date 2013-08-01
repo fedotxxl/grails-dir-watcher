@@ -2,7 +2,11 @@ package io.belov.grails
 import groovy.util.logging.Slf4j
 import org.apache.commons.io.FileUtils
 
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -12,7 +16,7 @@ import static io.belov.grails.FileUtils.*
 @Slf4j
 class SavedDirectoryWatcher implements DirectoryWatcher {
 
-    private Map<File, Set<FileFilter>> dirsWithFilters = [:].withDefault { [] as Set}
+    private Map<File, CompositeFilter> dirsWithFilters = [:]
     private List<File> dirs = []
     private DirectoryWatcher watcher
     private Integer sleepTime = 5000
@@ -65,11 +69,21 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
         def folder = getNormalizedFile(dir.toFile())
 
         dirs << folder
-        dirsWithFilters[folder] << filter
+        addDirectoryFilter(folder, filter)
 
         if (folder.exists() && folder.directory) {
             watcher.addWatchDirectory(dir, filter)
         }
+    }
+
+    private addDirectoryFilter(File folder, FileFilter filter) {
+        def compositeFilter = dirsWithFilters[folder]
+        if (!compositeFilter) {
+            compositeFilter = new CompositeFilter()
+            dirsWithFilters[folder] = compositeFilter
+        }
+
+        compositeFilter.add(filter)
     }
 
     @Override
@@ -112,22 +126,52 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
         }
 
         foldersToTriggerCreateEvent.root.each {
-            triggerCreateEvent(it)
+            iterateFolderAndTriggerCreateEvent(it)
         }
     }
     
     private trackFolder(File folder) {
         log.info "Start tracking remembered folder {}", folder
 
-        def path = folder.toPath()
+        watcher.addWatchDirectory(folder.toPath(), dirsWithFilters[folder])
+    }
 
-        dirsWithFilters[folder].each { filter ->
-            watcher.addWatchDirectory(path, filter)
+    private iterateFolderAndTriggerCreateEvent(File folder) {
+        log.info "Triggering create event for remembered folder {}", folder
+
+        FileFilter filters = getFiltersForFolder(folder)
+
+        Files.walkFileTree(folder.toPath(), new SimpleFileVisitor<Path>() {
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException
+            {
+                filters = getFiltersForFolder(pathToFile(dir))
+                return FileVisitResult.CONTINUE;
+            }
+
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+            {
+                if (filters.accept(file)) {
+                    triggerCreateEvent(pathToFile(file))
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        })
+    }
+
+    private triggerCreateEvent(File file) {
+        log.info "Triggering create event for remembered file {}", file
+    }
+
+    private getFiltersForFolder(File folder) {
+        def filters = null
+
+        while(filters == null && folder != null) {
+            filters = dirsWithFilters[folder]
         }
     }
 
-    private triggerCreateEvent(File folder) {
-        log.info "Triggering create event for remembered folder {}", folder
+    private pathToFile(Path path) {
+        return getNormalizedFile(path.toFile())
     }
 
     private Future isFolderTracked(File folder) {
