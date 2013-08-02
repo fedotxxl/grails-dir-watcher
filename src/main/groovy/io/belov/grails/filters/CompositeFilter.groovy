@@ -2,7 +2,7 @@
  * CompositeFilter
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails
+package io.belov.grails.filters
 
 import java.nio.file.Path
 
@@ -20,5 +20,10 @@ class CompositeFilter implements FileFilter {
         } else {
             return true
         }
+    }
+
+    @Override
+    String toString() {
+        return "CompositeFilter: ${filters}"
     }
 }

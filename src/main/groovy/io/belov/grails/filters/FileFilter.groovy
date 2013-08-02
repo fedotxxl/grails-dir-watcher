@@ -1,4 +1,4 @@
-package io.belov.grails
+package io.belov.grails.filters
 
 import java.nio.file.Path
 

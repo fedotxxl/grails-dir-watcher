@@ -2,7 +2,7 @@
  * FileExtensionFilter
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails
+package io.belov.grails.filters
 
 import org.apache.commons.io.FilenameUtils
 
@@ -21,5 +21,10 @@ class FileAnyExtensionFilter implements FileFilter {
         def extension = FilenameUtils.getExtension(file.fileName.toString()).toLowerCase()
 
         return extensions.any { it == extension }
+    }
+
+    @Override
+    String toString() {
+        return "FileAnyExtensionFilter: ${extensions}"
     }
 }

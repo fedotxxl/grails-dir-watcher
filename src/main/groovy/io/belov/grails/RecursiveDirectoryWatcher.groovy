@@ -4,6 +4,8 @@
  */
 package io.belov.grails
 import groovy.util.logging.Slf4j
+import io.belov.grails.filters.AllFilesFilter
+import io.belov.grails.filters.SingleFileFilter
 import org.apache.commons.lang.SystemUtils
 
 import java.nio.file.*
@@ -23,7 +25,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
     private boolean recursive = true;
 
     private Map<File, Map> events = [:]
-    private Map<Path, Set<FileFilter>> directories = [:].withDefault {[]}
+    private Map<Path, Set<io.belov.grails.filters.FileFilter>> directories = [:].withDefault {[]}
     private List<FileChangeListener> listeners = []
 
     private static final int EVENTS_DELAY = 50
@@ -62,7 +64,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
      */
     @Override
     public void addWatchFile(Path fileToWatch) {
-        log.debug("Watching file: " + fileToWatch);
+        log.debug("Watching file: {}", fileToWatch);
 
         register(fileToWatch, AllFilesFilter.instance);
     }
@@ -74,8 +76,8 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
      * @param fileExtensions The extensions
      */
     @Override
-    public void addWatchDirectory(Path dir, FileFilter f = null) {
-        log.debug("Watching dir: " + dir + "; filter: " + f);
+    public void addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter f = null) {
+        log.debug("Watching dir: {}; filter: {}", dir, f);
 
         def filter = f ?: AllFilesFilter.instance
 
@@ -90,7 +92,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
      * Register the given directory with the WatchService
      * @param filter - null equals check parent directories
      */
-    private void register(Path path, FileFilter filter = null) {
+    private void register(Path path, io.belov.grails.filters.FileFilter filter = null) {
         try {
             def file = path.toFile()
             if (file.exists()) {
@@ -125,7 +127,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
      * Register the given directory, and all its sub-directories, with the
      * WatchService.
      */
-    private void registerAll(final Path start, FileFilter filter = null) {
+    private void registerAll(final Path start, io.belov.grails.filters.FileFilter filter = null) {
         // register directory and sub-directories
         try {
             if (start.toFile().exists()) {
@@ -189,7 +191,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
                 if (isTrackedFile(child)) {
                     addEvent(eventType, file)
                 } else {
-                    log.trace("Skip file {} change event {}", file, eventType)
+                    log.trace("Skip event {} for file {} ", eventType, file)
                 }
 
                 // if directory is created, and watching recursively, then

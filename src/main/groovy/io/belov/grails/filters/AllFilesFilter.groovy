@@ -2,7 +2,7 @@
  * AllFilesFilter
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails
+package io.belov.grails.filters
 
 import java.nio.file.Path
 
@@ -14,4 +14,8 @@ class AllFilesFilter implements FileFilter {
         return true
     }
 
+    @Override
+    String toString() {
+        return "AllFilesFilter"
+    }
 }

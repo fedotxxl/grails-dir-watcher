@@ -2,7 +2,7 @@
  * FileExtensionFilter
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails
+package io.belov.grails.filters
 
 import org.apache.commons.io.FilenameUtils
 
@@ -19,5 +19,10 @@ class FileExtensionFilter implements FileFilter {
     @Override
     boolean accept(Path file) {
         return extension.equalsIgnoreCase(FilenameUtils.getExtension(file.fileName.toString()))
+    }
+
+    @Override
+    String toString() {
+        return "FileExtensionFilter: ${extension}"
     }
 }

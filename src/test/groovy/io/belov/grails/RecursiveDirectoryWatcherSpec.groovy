@@ -3,6 +3,8 @@
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
 package io.belov.grails
+
+import io.belov.grails.filters.FileExtensionFilter
 import spock.lang.Specification
 
 import java.nio.file.Paths

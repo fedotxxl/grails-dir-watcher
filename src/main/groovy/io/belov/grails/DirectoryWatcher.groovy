@@ -28,7 +28,7 @@ public interface DirectoryWatcher {
      * @param dir The directory
      * @param fileExtensions The extensions
      */
-    void addWatchDirectory(Path dir, FileFilter f);
+    void addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter f);
 
     /**
      * Starts watching process
