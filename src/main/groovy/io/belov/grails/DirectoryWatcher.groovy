@@ -1,7 +1,5 @@
 package io.belov.grails
 
-import org.apache.commons.lang.SystemUtils
-
 import java.nio.file.Path
 
 public interface DirectoryWatcher {

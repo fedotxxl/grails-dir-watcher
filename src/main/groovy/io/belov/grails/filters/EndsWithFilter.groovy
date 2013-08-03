@@ -17,7 +17,7 @@ class EndsWithFilter implements FileFilter {
 
     @Override
     boolean accept(Path file) {
-        return file.endsWith(end)
+        return file.toString().endsWith(end)
     }
 
     @Override

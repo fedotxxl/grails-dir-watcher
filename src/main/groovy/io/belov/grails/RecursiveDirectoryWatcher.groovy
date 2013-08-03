@@ -10,9 +10,9 @@ import org.apache.commons.lang.SystemUtils
 
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
-import static java.nio.file.LinkOption.NOFOLLOW_LINKS
+
+import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
 import static java.nio.file.StandardWatchEventKinds.*
-import static com.sun.nio.file.ExtendedWatchEventModifier.*
 
 @Slf4j
 class RecursiveDirectoryWatcher implements DirectoryWatcher {
@@ -77,8 +77,6 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
      */
     @Override
     public void addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter f = null) {
-        log.debug("Watching dir: {}; filter: {}", dir, f);
-
         def filter = f ?: AllFilesFilter.instance
 
         if (SystemUtils.IS_OS_WINDOWS) {
@@ -101,10 +99,10 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
                     WatchKey key = (SystemUtils.IS_OS_WINDOWS) ? path.register(watcher, watchEvents, FILE_TREE) : path.register(watcher, watchEvents);
                     Path prev = keys.get(key);
                     if (prev == null) {
-                        log.trace("Registered directory: {}, filter: {}", path, filter);
+                        log.debug("Registered directory: {}, filter: {}", path, filter);
                     } else {
                         if (!path.equals(prev)) {
-                            log.trace("Update directory: {} -> {}", prev, path);
+                            log.debug("Update directory: {} -> {}", prev, path);
                         }
                     }
 
@@ -155,66 +153,73 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
         log.info("Start watching file changes")
 
         startEventsQueue()
+        watchFileChanges()
+    }
 
+    private watchFileChanges() {
         while (active) {
-            // wait for key to be signalled
-            WatchKey key;
             try {
-                key = watcher.take();
-            } catch (InterruptedException x) {
-                return;
-            }
+                // wait for key to be signalled
+                WatchKey key;
+                try {
+                    key = watcher.take();
+                } catch (InterruptedException x) {
+                    return;
+                }
 
-            Path dir = keys.get(key);
-            if (dir == null) {
-                log.warn("WatchKey not recognized!!");
-                continue;
-            }
-
-            for (WatchEvent<?> event : key.pollEvents()) {
-                WatchEvent.Kind eventType = event.kind();
-
-                // TBD - provide example of how OVERFLOW event is handled
-                if (eventType == OVERFLOW) {
+                Path dir = keys.get(key);
+                if (dir == null) {
+                    log.warn("WatchKey not recognized!!");
                     continue;
                 }
 
-                // Context for directory entry event is the file name of entry
-                WatchEvent<Path> ev = (WatchEvent<Path>) event;
-                Path name = ev.context();
-                Path child = dir.resolve(name);
-                File file = child.toFile();
+                for (WatchEvent<?> event : key.pollEvents()) {
+                    WatchEvent.Kind eventType = event.kind();
 
-                // print out event
-                log.trace("{}: {}", eventType.name(), child);
+                    // TBD - provide example of how OVERFLOW event is handled
+                    if (eventType == OVERFLOW) {
+                        continue;
+                    }
 
-                if (isTrackedFile(child)) {
-                    addEvent(eventType, file)
-                } else {
-                    log.trace("Skip event {} for file {} ", eventType, file)
-                }
+                    // Context for directory entry event is the file name of entry
+                    WatchEvent<Path> ev = (WatchEvent<Path>) event;
+                    Path name = ev.context();
+                    Path child = dir.resolve(name);
+                    File file = child.toFile();
+                    Boolean trackChecker = TrackChecker.isTrackChecker(file)
 
-                // if directory is created, and watching recursively, then
-                // register it and its sub-directories
-                if (recursive && (eventType == ENTRY_CREATE)) {
-                    if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
-                        if (!SystemUtils.IS_OS_WINDOWS) registerAll(child);
+                    // print out event
+                    if (!trackChecker && file.isFile()) log.trace("{}: {}", eventType.name(), child);
+
+                    if (trackChecker || isTrackedFile(child)) {
+                        addEvent(eventType, file)
+                    } else {
+                        log.trace("Skip event {} for file {} ", eventType, file)
+                    }
+
+                    // if directory is created, and watching recursively, then
+                    // register it and its sub-directories
+                    if (recursive && (eventType == ENTRY_CREATE)) {
+                        if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
+                            if (!SystemUtils.IS_OS_WINDOWS) registerAll(child);
+                        }
                     }
                 }
-            }
 
-            // reset key and remove from set if directory no longer accessible
-            boolean valid = key.reset();
-            if (!valid) {
-                keys.remove(key);
+                // reset key and remove from set if directory no longer accessible
+                boolean valid = key.reset();
+                if (!valid) {
+                    keys.remove(key);
 
-                // all directories are inaccessible
-                if (keys.isEmpty()) {
-                    break;
+                    // all directories are inaccessible
+                    if (keys.isEmpty()) {
+                        break;
+                    }
                 }
+            } catch (e) {
+                log.error("Exception on watching file changes", e)
             }
         }
-
     }
 
     private startEventsQueue() {
@@ -286,7 +291,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
 
     private void fireOnChange(File file) {
         if (file.isFile()) {
-            log.debug("File {} is changed. Triggering listeners", file);
+            if (!TrackChecker.isTrackChecker(file)) log.debug("File {} is changed. Triggering listeners", file);
 
             for (FileChangeListener listener : listeners) {
                 listener.onChange(file);
@@ -295,7 +300,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
     }
 
     private void fireOnDelete(File file) {
-        log.debug("File {} is deleted. Triggering listeners", file);
+        if (!TrackChecker.isTrackChecker(file)) log.debug("File {} is deleted. Triggering listeners", file);
 
         for (FileChangeListener listener : listeners) {
             listener.onDelete(file);
@@ -304,7 +309,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
 
     private void fireOnCreate(File file) {
         if (file.isFile()) {
-            log.debug("File {} is created. Triggering listeners", file);
+            if (!TrackChecker.isTrackChecker(file)) log.debug("File {} is created. Triggering listeners", file);
 
             for (FileChangeListener listener : listeners) {
                 listener.onCreate(file);

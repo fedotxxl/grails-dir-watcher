@@ -1,6 +1,7 @@
 package io.belov.grails
 import groovy.util.logging.Slf4j
 import io.belov.grails.filters.CompositeFilter
+import io.belov.grails.filters.SingleFileFilter
 import org.apache.commons.io.FileUtils
 
 import java.nio.file.FileVisitResult
@@ -12,7 +13,10 @@ import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import static io.belov.grails.FileUtils.*
+import java.util.concurrent.TimeUnit
+
+import static io.belov.grails.FileUtils.getNonExistingFile
+import static io.belov.grails.FileUtils.getNormalizedFile
 
 @Slf4j
 class SavedDirectoryWatcher implements DirectoryWatcher {
@@ -45,7 +49,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
             }
 
             private trackFile(File f) {
-                if (trackedFiles.containsKey(f.canonicalPath)) trackedFiles[f.canonicalPath] = true
+                trackedFiles.put(f.canonicalPath, true)
             }
         })
     }
@@ -53,6 +57,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     @Override
     void setActive(Boolean active) {
         this.active = active
+        this.watcher.setActive(active)
     }
 
     @Override
@@ -62,7 +67,11 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
 
     @Override
     void addWatchFile(Path fileToWatch) {
-        watcher.addWatchFile(fileToWatch)
+        if (fileToWatch.toFile().exists()) {
+            watcher.addWatchFile(fileToWatch)
+        } else {
+            addWatchDirectory(fileToWatch.parent, new SingleFileFilter(fileToWatch))
+        }
     }
 
     @Override
@@ -91,54 +100,64 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     void start() {
 
         Thread.start {
+            watcher.start()
+        }
+
+        Thread.start {
             while (active) {
-                watchUndirsWithFilters()
+                watchUnwatchedDirsWithFilters()
                 sleep(sleepTime)
             }
         }
-
-        watcher.start()
     }
 
-    private watchUndirsWithFilters() {
-        def futures = dirs.collect() { File folder ->
-            if (folder.exists() && folder.directory) {
-                return isFolderTracked(folder)   
-            } else {
-                return null
-            }   
-        }
-
-        def foldersToTrack = []
-        def foldersToTriggerCreateEvent = new FileTree()
-
-        futures.eachWithIndex { Future future, i ->
-            if (future) {
-                def isTracked = future.get()
-                if (!isTracked) {
-                    foldersToTrack << dirs[i]
+    private watchUnwatchedDirsWithFilters() {
+        try {
+            def futures = dirs.collect() { File folder ->
+                if (folder.exists() && folder.directory) {
+                    return isFolderTracked(folder)
+                } else {
+                    return null
                 }
             }
-        }
 
-        foldersToTrack.each {
-            foldersToTriggerCreateEvent.add(it)
-            trackFolder(it)
-        }
+            def foldersToTrack = []
+            def foldersToTriggerCreateEvent = new FileTree()
 
-        foldersToTriggerCreateEvent.root.each {
-            iterateFolderAndTriggerCreateEvent(it)
+            futures.eachWithIndex { Future future, i ->
+                if (future) {
+                    try {
+                        def isTracked = future.get(1, TimeUnit.SECONDS)
+                        if (!isTracked) {
+                            foldersToTrack << dirs[i]
+                        }
+                    } catch (e) {
+                        log.warn "Exception on checking track folder ${dirs[i]}", e
+                    }
+                }
+            }
+
+            foldersToTrack.each {
+                foldersToTriggerCreateEvent.add(it)
+                trackFolder(it)
+            }
+
+            foldersToTriggerCreateEvent.root.each {
+                iterateFolderAndTriggerCreateEvent(it)
+            }
+        } catch (e) {
+            log.error("Exception on tracking saved directories", e)
         }
     }
     
     private trackFolder(File folder) {
-        log.info "Start tracking remembered folder {}", folder
+        log.trace "Start tracking remembered folder {}", folder
 
         watcher.addWatchDirectory(folder.toPath(), dirsWithFilters[folder])
     }
 
     private iterateFolderAndTriggerCreateEvent(File folder) {
-        log.info "Triggering create event for remembered folder {}", folder
+        log.trace "Triggering create event for remembered folder {}", folder
 
         io.belov.grails.filters.FileFilter filters = getFiltersForFolder(folder)
 
@@ -160,7 +179,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     }
 
     private triggerCreateEvent(File file) {
-        log.info "Triggering create event for remembered file {}", file
+        log.debug "Triggering create event for remembered file {}", file
     }
 
     private getFiltersForFolder(File folder) {
@@ -178,7 +197,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     }
 
     private Future isFolderTracked(File folder) {
-        File file = getNonExistingFile(folder)
+        def file = generateTouchFile(folder)
 
         Future future = executor.submit({ ->
             return waitForAnyEvent(file)
@@ -191,13 +210,19 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     }
 
     private waitForAnyEvent(File file) {
-        trackedFiles[file.canonicalPath] = false
+        def path = file.canonicalPath
+
+        trackedFiles.remove(path)
 
         sleep(500)
 
-        def tracked = trackedFiles[file.canonicalPath]
-        trackedFiles.remove(file)
+        return trackedFiles.remove(path)
+    }
 
-        return tracked
+    private generateTouchFile(File folder) {
+        File file = getNonExistingFile(folder)
+        File touch = new File(file.canonicalPath + TrackChecker.TRACK_CHECKER_EXTENSION)
+
+        return touch
     }
 }

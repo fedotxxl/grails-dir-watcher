@@ -27,3 +27,12 @@ dependencies {
     //testing
     testCompile "org.spockframework:spock-core:$spockVersion" //spock framework
 }
+
+task sourcesJar(type: Jar, dependsOn:classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
