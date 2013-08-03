@@ -6,10 +6,16 @@ package io.belov.grails
 
 import org.apache.commons.lang.RandomStringUtils
 
+import java.nio.file.Path
+
 class FileUtils {
 
     static getNormalizedFile(File file) {
         return new File(file.canonicalPath)
+    }
+
+    static getNormalizedFile(Path path) {
+        return getNormalizedFile(path.toFile())
     }
 
     static getNonExistingFile(File parent) {
