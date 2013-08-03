@@ -5,6 +5,7 @@
 package io.belov.grails
 import groovy.util.logging.Slf4j
 import io.belov.grails.filters.AllFilesFilter
+import io.belov.grails.filters.CompositeFilter
 import io.belov.grails.filters.SingleFileFilter
 import org.apache.commons.lang.SystemUtils
 
@@ -26,7 +27,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
     private boolean recursive = true;
     private volatile boolean stopOnEmptyWatchList = false
 
-    private Map<Path, Set<FileFilter>> directories = new ConcurrentHashMap<>().withDefault {[]}
+    private Map<Path, CompositeFilter> dirsWithFilters = new ConcurrentHashMap<>()
     private EventsQueue eventsQueue = new EventsQueue()
 
     public RecursiveDirectoryWatcher() {
@@ -107,8 +108,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
                     }
 
                     keys.put(key, path);
-
-                    if (filter) directories[path] << filter
+                    rememberDirectoryWithFilter(path, filter)
                 } else {
                     //register parent directory with file filter
                     register(path.parent, new SingleFileFilter(path))
@@ -119,6 +119,16 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
         } catch (IOException e) {
             log.error("Exception on register directory " + path + " to watch", e);
         }
+    }
+
+    private rememberDirectoryWithFilter(Path path, io.belov.grails.filters.FileFilter filter) {
+        def compositeFilter = dirsWithFilters[path]
+        if (!compositeFilter) {
+            compositeFilter = new CompositeFilter()
+            dirsWithFilters[path] = compositeFilter
+        }
+
+        compositeFilter.add((filter) ?: AllFilesFilter.instance)
     }
 
     /**
@@ -235,9 +245,10 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
         def path = file
 
         while(path) {
-            def filters = directories[path]
-            if (filters) {
-                return filters.any { it.accept(file) }
+            def filter = dirsWithFilters[path]
+
+            if (filter) {
+                return filter.accept(file)
             }
 
             path = path.parent
