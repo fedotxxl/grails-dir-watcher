@@ -10,6 +10,7 @@ import org.apache.commons.lang.SystemUtils
 
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.concurrent.ConcurrentHashMap
 
 import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
 import static java.nio.file.StandardWatchEventKinds.*
@@ -20,15 +21,13 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
     private static final WatchEvent.Kind[] watchEvents = [ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE]
 
     private WatchService watcher;
-    private Map<WatchKey, Path> keys = [:];
+    private Map<WatchKey, Path> keys = new ConcurrentHashMap<>();
     private volatile boolean active = true;
     private boolean recursive = true;
+    private volatile boolean stopOnEmptyWatchList = false
 
-    private Map<File, Map> events = [:]
-    private Map<Path, Set<io.belov.grails.filters.FileFilter>> directories = [:].withDefault {[]}
-    private List<FileChangeListener> listeners = []
-
-    private static final int EVENTS_DELAY = 50
+    private Map<Path, Set<FileFilter>> directories = new ConcurrentHashMap<>().withDefault {[]}
+    private EventsQueue eventsQueue = new EventsQueue()
 
     public RecursiveDirectoryWatcher() {
         try {
@@ -44,7 +43,8 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
      * @param active False if you want to stop watching
      */
     public void setActive(Boolean active) {
-        this.active = active;
+        this.active = active
+        this.eventsQueue.setActive(active)
     }
 
     /**
@@ -54,7 +54,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
      */
     @Override
     public void addListener(FileChangeListener listener) {
-        listeners.add(listener);
+        eventsQueue.addListener(listener);
     }
 
     /**
@@ -156,6 +156,12 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
         watchFileChanges()
     }
 
+    private startEventsQueue() {
+        Thread.start {
+            eventsQueue.start()
+        }
+    }
+
     private watchFileChanges() {
         while (active) {
             try {
@@ -164,6 +170,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
                 try {
                     key = watcher.take();
                 } catch (InterruptedException x) {
+                    log.warn("Stop watching file changes because of InterruptedException")
                     return;
                 }
 
@@ -192,7 +199,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
                     if (!trackChecker && file.isFile()) log.trace("{}: {}", eventType.name(), child);
 
                     if (trackChecker || isTrackedFile(child)) {
-                        addEvent(eventType, file)
+                        eventsQueue.addEvent(eventType, file)
                     } else {
                         log.trace("Skip event {} for file {} ", eventType, file)
                     }
@@ -200,7 +207,7 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
                     // if directory is created, and watching recursively, then
                     // register it and its sub-directories
                     if (recursive && (eventType == ENTRY_CREATE)) {
-                        if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
+                        if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
                             if (!SystemUtils.IS_OS_WINDOWS) registerAll(child);
                         }
                     }
@@ -212,62 +219,12 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
                     keys.remove(key);
 
                     // all directories are inaccessible
-                    if (keys.isEmpty()) {
+                    if (keys.isEmpty() && stopOnEmptyWatchList) {
                         break;
                     }
                 }
             } catch (e) {
                 log.error("Exception on watching file changes", e)
-            }
-        }
-    }
-
-    private startEventsQueue() {
-        Thread.start {
-            while(active) {
-                synchronized (events) {
-                    def triggered = []
-                    //trigger last event after Xms
-                    events.each { File file, Map info ->
-                        if (System.currentTimeMillis() - info.date > EVENTS_DELAY) {
-                            fireEvent(info.event, file)
-                            triggered << file
-                        }
-                    }
-
-                    triggered.each { file ->
-                        events.remove(file)
-                    }
-                }
-
-                //sleep
-                sleep(EVENTS_DELAY)
-            }
-        }
-    }
-
-    private fireEvent(WatchEvent.Kind event, File file) {
-        //let's trigger last event
-        if (event == ENTRY_MODIFY) {
-            fireOnChange(file)
-        } else if (event == ENTRY_DELETE) {
-            fireOnDelete(file)
-        } else if (event == ENTRY_CREATE) {
-            fireOnCreate(file)
-        }
-    }
-
-    private addEvent(WatchEvent.Kind eventType, File file) {
-        synchronized (events) {
-            def doAddEvent = true
-
-            //special case - file creation. Create event should be saved
-            if (eventType == ENTRY_MODIFY && events[file]?.event == ENTRY_CREATE) {
-                doAddEvent = false
-            }
-
-            if (doAddEvent) {
-                events[file] = [event: eventType, date: System.currentTimeMillis()]
             }
         }
     }
@@ -287,33 +244,5 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
         }
 
         return false
-    }
-
-    private void fireOnChange(File file) {
-        if (file.isFile()) {
-            if (!TrackChecker.isTrackChecker(file)) log.debug("File {} is changed. Triggering listeners", file);
-
-            for (FileChangeListener listener : listeners) {
-                listener.onChange(file);
-            }
-        }
-    }
-
-    private void fireOnDelete(File file) {
-        if (!TrackChecker.isTrackChecker(file)) log.debug("File {} is deleted. Triggering listeners", file);
-
-        for (FileChangeListener listener : listeners) {
-            listener.onDelete(file);
-        }
-    }
-
-    private void fireOnCreate(File file) {
-        if (file.isFile()) {
-            if (!TrackChecker.isTrackChecker(file)) log.debug("File {} is created. Triggering listeners", file);
-
-            for (FileChangeListener listener : listeners) {
-                listener.onCreate(file);
-            }
-        }
     }
 }

@@ -2,20 +2,15 @@ package io.belov.grails
 import groovy.util.logging.Slf4j
 import io.belov.grails.filters.CompositeFilter
 import io.belov.grails.filters.SingleFileFilter
-import org.apache.commons.io.FileUtils
 
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.concurrent.Callable
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
-import static io.belov.grails.FileUtils.getNonExistingFile
 import static io.belov.grails.FileUtils.getNormalizedFile
 
 @Slf4j
@@ -24,34 +19,13 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     private Map<File, CompositeFilter> dirsWithFilters = [:]
     private List<File> dirs = []
     private DirectoryWatcher watcher
+    private TrackChecker trackChecker
     private Integer sleepTime = 5000
     private Boolean active = true
-    private executor = Executors.newCachedThreadPool()
-    private Map trackedFiles = new ConcurrentHashMap()
 
     SavedDirectoryWatcher(DirectoryWatcher watcher) {
         this.watcher = watcher
-        this.watcher.addListener(new FileChangeListener() {
-
-            @Override
-            void onChange(File file) {
-                trackFile(file)
-            }
-
-            @Override
-            void onDelete(File file) {
-                trackFile(file)
-            }
-
-            @Override
-            void onCreate(File file) {
-                trackFile(file)
-            }
-
-            private trackFile(File f) {
-                trackedFiles.put(f.canonicalPath, true)
-            }
-        })
+        this.trackChecker = new TrackChecker(watcher)
     }
 
     @Override
@@ -115,7 +89,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
         try {
             def futures = dirs.collect() { File folder ->
                 if (folder.exists() && folder.directory) {
-                    return isFolderTracked(folder)
+                    return trackChecker.isFolderTracked(folder)
                 } else {
                     return null
                 }
@@ -194,35 +168,5 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
 
     private pathToFile(Path path) {
         return getNormalizedFile(path.toFile())
-    }
-
-    private Future isFolderTracked(File folder) {
-        def file = generateTouchFile(folder)
-
-        Future future = executor.submit({ ->
-            return waitForAnyEvent(file)
-        } as Callable)
-
-        FileUtils.touch(file)
-        file.delete()
-
-        return future
-    }
-
-    private waitForAnyEvent(File file) {
-        def path = file.canonicalPath
-
-        trackedFiles.remove(path)
-
-        sleep(500)
-
-        return trackedFiles.remove(path)
-    }
-
-    private generateTouchFile(File folder) {
-        File file = getNonExistingFile(folder)
-        File touch = new File(file.canonicalPath + TrackChecker.TRACK_CHECKER_EXTENSION)
-
-        return touch
     }
 }

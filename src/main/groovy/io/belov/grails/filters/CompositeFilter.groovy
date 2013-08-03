@@ -10,7 +10,9 @@ class CompositeFilter implements FileFilter {
     private filters = [] as Set
 
     void add(FileFilter filter) {
-        filters << filter
+        if (filter) {
+            filters << filter
+        }
     }
 
     @Override
