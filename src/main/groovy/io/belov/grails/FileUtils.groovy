@@ -29,4 +29,10 @@ class FileUtils {
         return file
     }
 
+    static boolean isParentOf(File base, File child) {
+        def childPath = child.canonicalPath
+        def parentPath = base.canonicalPath
+
+        return childPath != parentPath && childPath.startsWith(parentPath)
+    }
 }

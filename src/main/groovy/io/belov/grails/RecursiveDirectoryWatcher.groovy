@@ -10,23 +10,13 @@ import org.apache.commons.lang.SystemUtils
 
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.concurrent.ConcurrentHashMap
 
 import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
-import static java.nio.file.StandardWatchEventKinds.*
 
 @Slf4j
-class RecursiveDirectoryWatcher implements DirectoryWatcher {
+class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
 
-    private static final WatchEvent.Kind[] watchEvents = [ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE]
-
-    private WatchService watcher;
-    private Map<WatchKey, Path> keys = new ConcurrentHashMap<>();
-    private volatile boolean active = true;
-    private boolean recursive = true;
-    private volatile boolean stopOnEmptyWatchList = false
     private FiltersContainer filtersContainer = new FiltersContainer()
-    private EventsQueue eventsQueue = new EventsQueue()
 
     public RecursiveDirectoryWatcher() {
         try {
@@ -34,26 +24,6 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
         } catch (IOException e) {
             log.error("Exception on MyDirectoryWatcher startup", e);
         }
-    }
-
-    /**
-     * Sets whether to stop the directory watcher
-     *
-     * @param active False if you want to stop watching
-     */
-    public void setActive(Boolean active) {
-        this.active = active
-        this.eventsQueue.setActive(active)
-    }
-
-    /**
-     * Adds a file listener that can react to change events
-     *
-     * @param listener The file listener
-     */
-    @Override
-    public void addListener(FileChangeListener listener) {
-        eventsQueue.addListener(listener);
     }
 
     /**
@@ -154,88 +124,24 @@ class RecursiveDirectoryWatcher implements DirectoryWatcher {
         watchFileChanges()
     }
 
-    private startEventsQueue() {
-        Thread.start {
-            eventsQueue.start()
-        }
+    @Override
+    protected processCreatedFolder(File file) {
+        if (!SystemUtils.IS_OS_WINDOWS) registerAll(file.toPath())
     }
 
-    private watchFileChanges() {
-        while (active) {
-            try {
-                // wait for key to be signalled
-                WatchKey key;
-                try {
-                    key = watcher.take();
-                } catch (InterruptedException x) {
-                    log.warn("Stop watching file changes because of InterruptedException")
-                    return;
-                }
-
-                Path dir = keys.get(key);
-                if (dir == null) {
-                    log.warn("WatchKey not recognized!!");
-                    continue;
-                }
-
-                for (WatchEvent<?> event : key.pollEvents()) {
-                    WatchEvent.Kind eventType = event.kind();
-
-                    // TBD - provide example of how OVERFLOW event is handled
-                    if (eventType == OVERFLOW) {
-                        continue;
-                    }
-
-                    // Context for directory entry event is the file name of entry
-                    WatchEvent<Path> ev = (WatchEvent<Path>) event;
-                    Path name = ev.context();
-                    Path child = dir.resolve(name);
-                    File file = child.toFile();
-                    Boolean trackChecker = TrackChecker.isTrackChecker(file)
-
-                    // print out event
-                    if (!trackChecker && file.isFile()) log.trace("{}: {}", eventType.name(), child);
-
-                    if (trackChecker || isTrackedFile(child)) {
-                        eventsQueue.addEvent(eventType, file)
-                    } else {
-                        log.trace("Skip event {} for file {} ", eventType, file)
-                    }
-
-                    // if directory is created, and watching recursively, then
-                    // register it and its sub-directories
-                    if (recursive && (eventType == ENTRY_CREATE)) {
-                        if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
-                            if (!SystemUtils.IS_OS_WINDOWS) registerAll(child);
-                        }
-                    }
-                }
-
-                // reset key and remove from set if directory no longer accessible
-                boolean valid = key.reset();
-                if (!valid) {
-                    keys.remove(key);
-
-                    // all directories are inaccessible
-                    if (keys.isEmpty() && stopOnEmptyWatchList) {
-                        break;
-                    }
-                }
-            } catch (e) {
-                log.error("Exception on watching file changes", e)
-            }
-        }
-    }
-
-    private boolean isTrackedFile(Path file) {
-//        if (!path.toFile().isFile()) return false //doesn't work for deleted files
-
+    @Override
+    protected isTrackedFile(File file) {
         def filter = filtersContainer.getFilterForFolder(file)
 
         if (filter) {
-            return filter.accept(file)
+            return filter.accept(file.toPath())
         } else {
             return false
         }
+    }
+
+    @Override
+    protected isStopOnEmptyWatchList() {
+        return false
     }
 }
