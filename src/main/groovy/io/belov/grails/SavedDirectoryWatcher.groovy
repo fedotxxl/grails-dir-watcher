@@ -28,9 +28,9 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     }
 
     @Override
-    void setActive(Boolean active) {
-        this.active = active
-        this.watcher.setActive(active)
+    void stop() {
+        this.active = false
+        this.watcher.stop()
     }
 
     @Override
@@ -39,16 +39,18 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     }
 
     @Override
-    void addWatchFile(Path fileToWatch) {
+    DirectoryWatcher addWatchFile(Path fileToWatch) {
         if (fileToWatch.toFile().exists()) {
             watcher.addWatchFile(fileToWatch)
         } else {
             addWatchDirectory(fileToWatch.parent, new SingleFileFilter(fileToWatch))
         }
+
+        return this
     }
 
     @Override
-    void addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter filter = null) {
+    DirectoryWatcher addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter filter = null) {
         def folder = getNormalizedFile(dir.toFile())
 
         dirs << folder
@@ -57,6 +59,8 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
         if (folder.exists() && folder.directory) {
             watcher.addWatchDirectory(dir, filter)
         }
+
+        return this
     }
 
     @Override

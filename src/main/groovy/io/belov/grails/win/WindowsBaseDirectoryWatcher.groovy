@@ -5,6 +5,7 @@
 package io.belov.grails.win
 import groovy.util.logging.Slf4j
 import io.belov.grails.AbstractDirectoryWatcher
+import io.belov.grails.DirectoryWatcher
 import io.belov.grails.FileUtils
 import io.belov.grails.FiltersContainer
 import io.belov.grails.filters.AllFilesFilter
@@ -27,23 +28,27 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
     }
 
     @Override
-    void addWatchFile(Path fileToWatch) {
+    DirectoryWatcher addWatchFile(Path fileToWatch) {
         def file = fileToWatch.toFile()
         if (isWatchableDirectory(file.parentFile)) {
             filtersContainer.addFilterForFolder(file.parentFile, new SingleFileFilter(fileToWatch))
         } else {
             log.error "File ${fileToWatch} is not child of ${base}"
         }
+
+        return this
     }
 
     @Override
-    void addWatchDirectory(Path dirToWatch, io.belov.grails.filters.FileFilter f = null) {
+    DirectoryWatcher addWatchDirectory(Path dirToWatch, io.belov.grails.filters.FileFilter f = null) {
         def dir = dirToWatch.toFile()
         if (isWatchableDirectory(dir)) {
             filtersContainer.addFilterForFolder(dir, f)
         } else {
             log.error "Directory ${dir} is not child of ${base}"
         }
+
+        return this
     }
 
     @Override

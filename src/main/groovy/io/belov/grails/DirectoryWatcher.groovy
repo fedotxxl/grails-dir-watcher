@@ -4,8 +4,6 @@ import java.nio.file.Path
 
 public interface DirectoryWatcher {
 
-    void setActive(Boolean active)
-
     /**
      * Adds a file listener that can react to change events
      *
@@ -18,7 +16,7 @@ public interface DirectoryWatcher {
      *
      * @param fileToWatch The file to watch
      */
-    void addWatchFile(Path fileToWatch)
+    DirectoryWatcher addWatchFile(Path fileToWatch)
 
     /**
      * Adds a directory to watch for the given file and extensions.
@@ -26,11 +24,16 @@ public interface DirectoryWatcher {
      * @param dir The directory
      * @param fileExtensions The extensions
      */
-    void addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter f);
+    DirectoryWatcher addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter f);
 
     /**
      * Starts watching process
      */
     void start();
+
+    /**
+     * Stops process
+     */
+    void stop()
 
 }

@@ -32,10 +32,11 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
      * @param fileToWatch The file to watch
      */
     @Override
-    public void addWatchFile(Path fileToWatch) {
+    public DirectoryWatcher addWatchFile(Path fileToWatch) {
         log.debug("Watching file: {}", fileToWatch);
 
         register(fileToWatch, AllFilesFilter.instance);
+        return this
     }
 
     /**
@@ -45,7 +46,7 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
      * @param fileExtensions The extensions
      */
     @Override
-    public void addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter f = null) {
+    public DirectoryWatcher addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter f = null) {
         def filter = f ?: AllFilesFilter.instance
 
         if (SystemUtils.IS_OS_WINDOWS) {
@@ -53,6 +54,8 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
         } else {
             registerAll(dir, filter);
         }
+
+        return this
     }
 
     /**
@@ -121,7 +124,7 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
         log.info("Start watching file changes")
 
         startEventsQueue()
-        watchFileChanges()
+        startWatchingFileChanges()
     }
 
     @Override

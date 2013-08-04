@@ -26,9 +26,9 @@ abstract class AbstractDirectoryWatcher implements DirectoryWatcher {
      * @param active False if you want to stop watching
      */
     @Override
-    public void setActive(Boolean active) {
-        this.active = active
-        this.eventsQueue.setActive(active)
+    public void stop() {
+        this.active = false
+        this.eventsQueue.setActive(false)
     }
 
     /**
