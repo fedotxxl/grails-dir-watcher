@@ -12,14 +12,14 @@ import java.util.concurrent.ConcurrentHashMap
 
 class FiltersContainer {
 
-    private final Map<File, CompositeFilter> dirsWithFilters = new ConcurrentHashMap<>()
+    private final Map<String, CompositeFilter> dirsWithFilters = new ConcurrentHashMap<>()
 
     void addFilterForFolder(File folder, io.belov.grails.filters.FileFilter filter) {
         synchronized (dirsWithFilters) {
-            def compositeFilter = dirsWithFilters[folder]
+            def compositeFilter = dirsWithFilters[folder.canonicalPath]
             if (!compositeFilter) {
                 compositeFilter = new CompositeFilter()
-                dirsWithFilters[folder] = compositeFilter
+                dirsWithFilters[folder.canonicalPath] = compositeFilter
             }
 
             compositeFilter.add((filter) ?: AllFilesFilter.instance)
@@ -32,7 +32,7 @@ class FiltersContainer {
 
     CompositeFilter getFilterForFolder(File folder) {
         while(folder) {
-            def filter = dirsWithFilters[folder]
+            def filter = dirsWithFilters[folder.canonicalPath]
 
             if (filter) {
                 return filter

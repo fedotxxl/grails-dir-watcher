@@ -7,6 +7,7 @@ import groovy.util.logging.Slf4j
 import io.belov.grails.AbstractDirectoryWatcher
 import io.belov.grails.FileUtils
 import io.belov.grails.FiltersContainer
+import io.belov.grails.filters.AllFilesFilter
 import io.belov.grails.filters.SingleFileFilter
 import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
 
@@ -19,15 +20,16 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
     private File base
     private FiltersContainer filtersContainer = new FiltersContainer()
 
-    WindowsBaseDirectoryWatcher(File base) {
+    WindowsBaseDirectoryWatcher(File base, Boolean watchForAnyChanges = false) {
         this.watcher = FileSystems.getDefault().newWatchService();
         this.base = FileUtils.getNormalizedFile(base)
+        if (watchForAnyChanges) addWatchDirectory(base.toPath(), AllFilesFilter.instance)
     }
 
     @Override
     void addWatchFile(Path fileToWatch) {
         def file = fileToWatch.toFile()
-        if (FileUtils.isParentOf(base, file)) {
+        if (isWatchableDirectory(file.parentFile)) {
             filtersContainer.addFilterForFolder(file.parentFile, new SingleFileFilter(fileToWatch))
         } else {
             log.error "File ${fileToWatch} is not child of ${base}"
@@ -37,7 +39,7 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
     @Override
     void addWatchDirectory(Path dirToWatch, io.belov.grails.filters.FileFilter f = null) {
         def dir = dirToWatch.toFile()
-        if (FileUtils.isParentOf(base, dir)) {
+        if (isWatchableDirectory(dir)) {
             filtersContainer.addFilterForFolder(dir, f)
         } else {
             log.error "Directory ${dir} is not child of ${base}"
@@ -75,5 +77,10 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
 
     private trackBaseDirectory() {
         keys.put(base.toPath().register(watcher, watchEvents, FILE_TREE), base.toPath())
+    }
+
+    private isWatchableDirectory(File d) {
+        def dir = FileUtils.getNormalizedFile(d)
+        return FileUtils.isParentOf(base, dir) || dir == base
     }
 }
