@@ -39,7 +39,7 @@ class CommonDirectoryWatcherSpec extends Specification {
             log.info("Testing ${watcher}")
 
             watcher.start()
-//            assert directoryWatcherSpec.testCreateChange(watcher, testFolder)
+            assert directoryWatcherSpec.testCreateChange(watcher, testFolder)
             assert directoryWatcherSpec.testRecursiveChange(watcher, testFolder)
             watcher.stop()
         }
