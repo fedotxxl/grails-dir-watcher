@@ -36,11 +36,10 @@ class CommonDirectoryWatcherTestHelper {
 
     boolean testRecursiveChange(DirectoryWatcher watcher, File folder, List<String> files = null, List<WatchEvent.Kind> createEvents = null, List<WatchEvent.Kind> changeEvents = null) {
         def subFolder = new File(folder, 'b/c/')
-        ApacheFileUtils.cleanDirectory(subFolder)
+
         assert doTestCreateChange(watcher, subFolder, files, createEvents, changeEvents)
         assert doTestCreateChange(watcher, subFolder.parentFile, files, createEvents, changeEvents)
         assert doTestCreateChange(watcher, folder, files, createEvents, changeEvents)
-        ApacheFileUtils.cleanDirectory(subFolder)
 
         return true
     }
@@ -77,6 +76,8 @@ class CommonDirectoryWatcherTestHelper {
             def events = eventsCollector.eventsForLastMs(200)
             checkEvents(files, expected, events)
         }
+
+        (folder.exists()) ? ApacheFileUtils.cleanDirectory(folder) : folder.mkdirs()
 
         //create files / check events
         files.each { ApacheFileUtils.touch(getFile(folder, it)) }

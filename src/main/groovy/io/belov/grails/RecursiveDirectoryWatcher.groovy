@@ -35,7 +35,8 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
     public DirectoryWatcher addWatchFile(Path fileToWatch) {
         log.debug("Watching file: {}", fileToWatch);
 
-        register(fileToWatch, AllFilesFilter.instance);
+        register(fileToWatch);
+
         return this
     }
 
