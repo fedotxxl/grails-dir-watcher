@@ -15,11 +15,13 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 @Slf4j
 class CommonDirectoryWatcherTestHelper {
 
+    private static final WAIT_FOR_CHANGES_DELAY = 500
+
     boolean testCreateChange(DirectoryWatcher watcher, File folder) {
         return doTestCreateChange(watcher, folder)
     }
 
-    boolean testSaveChange(DirectoryWatcher watcher, File folder, Integer delay = 200) {
+    boolean testSaveChange(DirectoryWatcher watcher, File folder, Integer delay = WAIT_FOR_CHANGES_DELAY) {
         log.debug("Testing ${watcher} before ${folder} is deleted")
         assert doTestCreateChange(watcher, folder)
 
@@ -72,22 +74,36 @@ class CommonDirectoryWatcherTestHelper {
         }
 
         def waitAndCheckEvents = { List changedFiles, List expected ->
-            sleep(200)
-            def events = eventsCollector.eventsForLastMs(200)
+            sleep(WAIT_FOR_CHANGES_DELAY)
+            def events = eventsCollector.eventsForLastMs(WAIT_FOR_CHANGES_DELAY)
             checkEvents(files, expected, events)
         }
 
-        (folder.exists()) ? ApacheFileUtils.cleanDirectory(folder) : folder.mkdirs()
+        if (folder.exists()) ApacheFileUtils.cleanDirectory(folder)
+        //create file folders
+        files.each { makeFoldersAndWaitToAttachListeners(getFile(folder, it).parentFile)}
 
         //create files / check events
-        files.each { ApacheFileUtils.touch(getFile(folder, it)) }
+        files.each { touchFile(getFile(folder, it), 'create') }
         waitAndCheckEvents(files, createEvents)
 
         //change files / check events
-        files.each { ApacheFileUtils.touch(getFile(folder, it))}
+        files.each { touchFile(getFile(folder, it), 'change') }
         waitAndCheckEvents(files, changeEvents)
 
         return true
+    }
+
+    private touchFile(File file, String event = null) {
+        log.trace("Touching file: ${file} - ${event}")
+        ApacheFileUtils.touch(file)
+    }
+
+    private makeFoldersAndWaitToAttachListeners(File folder) {
+        if (!folder.exists()) {
+            folder.mkdirs()
+            sleep(WAIT_FOR_CHANGES_DELAY)
+        }
     }
 
     private getFile(File folder, String path) {
