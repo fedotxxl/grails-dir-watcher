@@ -52,7 +52,7 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
     }
 
     @Override
-    void start() {
+    void startAsync() {
         log.debug("Start watching changes in base dir ${base}")
         trackBaseDirectory()
         startEventsQueue()

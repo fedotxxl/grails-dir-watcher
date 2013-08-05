@@ -64,11 +64,8 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     }
 
     @Override
-    void start() {
-
-        Thread.start {
-            watcher.start()
-        }
+    void startAsync() {
+        watcher.startAsync()
 
         Thread.start {
             while (active) {

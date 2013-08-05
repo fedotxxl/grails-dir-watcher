@@ -121,7 +121,7 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
     }
 
     @Override
-    void start() {
+    void startAsync() {
         log.info("Start watching file changes")
 
         startEventsQueue()

@@ -36,7 +36,7 @@ class CommonDirectoryWatcherSpec extends Specification {
 
         log.info("Testing ${watcher}")
 
-        watcher.start()
+        watcher.startAsync()
         assert directoryWatcherSpec.testCreateChange(watcher, testFolder)
         assert directoryWatcherSpec.testRecursiveChange(watcher, testFolder)
         watcher.stop()
@@ -65,7 +65,7 @@ class CommonDirectoryWatcherSpec extends Specification {
 
         log.info("Testing ${watcher}")
 
-        watcher.start()
+        watcher.startAsync()
         assert directoryWatcherSpec.testRecursiveFilters(watcher, testFolder, files, createEvents, changeEvents)
         watcher.stop()
 
@@ -95,7 +95,7 @@ class CommonDirectoryWatcherSpec extends Specification {
 
         log.info("Testing ${watcher}")
 
-        watcher.start()
+        watcher.startAsync()
         assert directoryWatcherSpec.testFilters(watcher, testFolder, files, createEvents, changeEvents)
         watcher.stop()
 
@@ -110,7 +110,7 @@ class CommonDirectoryWatcherSpec extends Specification {
         def getter = getWatcher
         def watcher = getter(folder)
 
-        watcher.start()
+        watcher.startAsync()
         assert directoryWatcherSpec.testSaveChange(watcher, folder, delay)
         watcher.stop()
 

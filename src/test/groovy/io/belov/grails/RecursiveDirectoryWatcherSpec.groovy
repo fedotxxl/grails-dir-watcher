@@ -16,7 +16,7 @@ class RecursiveDirectoryWatcherSpec extends Specification {
         Thread.start {
             def watcher = new RecursiveDirectoryWatcher()
             watcher.addWatchDirectory(Paths.get("D:/abc/123"))
-            watcher.start()
+            watcher.startAsync()
         }
 
         sleep(1000*1000)
@@ -33,7 +33,7 @@ class RecursiveDirectoryWatcherSpec extends Specification {
             watcher.addWatchDirectory(Paths.get("D:/abc/w/123"))
             watcher.addWatchDirectory(Paths.get("D:/abc/w/123"), new FileExtensionFilter("txt"))
             watcher.addWatchDirectory(Paths.get("D:/abc/w/456"), new FileExtensionFilter("txt"))
-            watcher.start()
+            watcher.startAsync()
         }
 
         sleep(1000*1000)
@@ -48,7 +48,7 @@ class RecursiveDirectoryWatcherSpec extends Specification {
             def watcher = new RecursiveDirectoryWatcher()
             watcher.addWatchDirectory(Paths.get("D:/abc/123"))
             watcher.addWatchFile(Paths.get("D:/abc/New Text Document.txt"))
-            watcher.start()
+            watcher.startAsync()
         }
 
         sleep(1000*1000)

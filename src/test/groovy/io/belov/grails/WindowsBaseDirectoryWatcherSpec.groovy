@@ -36,7 +36,7 @@ class WindowsBaseDirectoryWatcherSpec extends Specification {
             watcher.addWatchDirectory(Paths.get("D:/efg/w/"))
             watcher.addWatchDirectory(Paths.get("D:/abc/w/123"), new FileExtensionFilter("txt"))
             watcher.addWatchDirectory(Paths.get("D:/abc/w/456"), new FileExtensionFilter("txt"))
-            watcher.start()
+            watcher.startAsync()
         }
 
         sleep(1000*1000)

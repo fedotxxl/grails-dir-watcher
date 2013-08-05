@@ -14,7 +14,7 @@ class SavedDirectoryWatcherSpec extends Specification {
             watcher.addWatchDirectory(Paths.get("D:/abc/123/456"))
             watcher.addWatchDirectory(Paths.get("D:/abc/123/456/678"))
             watcher.addWatchDirectory(Paths.get("D:/abc/123/9"))
-            watcher.start()
+            watcher.startAsync()
         }
 
         sleep(1000*1000)

@@ -29,7 +29,7 @@ public interface DirectoryWatcher {
     /**
      * Starts watching process
      */
-    void start();
+    void startAsync();
 
     /**
      * Stops process
