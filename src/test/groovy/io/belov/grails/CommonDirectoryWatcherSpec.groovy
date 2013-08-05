@@ -134,6 +134,10 @@ class CommonDirectoryWatcherSpec extends Specification {
                 }]
     }
 
+    def "test move folder with tracked content"() {
+        //todo
+    }
+
     private WindowsWatcher(File folder, Boolean watchForAnyChanges = false) {
         if (SystemUtils.IS_OS_WINDOWS) {
             return new WindowsBaseDirectoryWatcher(folder, watchForAnyChanges)
