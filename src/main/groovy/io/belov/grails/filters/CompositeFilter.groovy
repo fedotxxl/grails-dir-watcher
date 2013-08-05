@@ -24,6 +24,10 @@ class CompositeFilter implements FileFilter {
         }
     }
 
+    Set<FileFilter> getFilters() {
+        return this.@filters
+    }
+
     @Override
     String toString() {
         return "CompositeFilter: ${filters}"

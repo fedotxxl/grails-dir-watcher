@@ -5,6 +5,7 @@
 package io.belov.grails
 import groovy.util.logging.Slf4j
 import io.belov.grails.filters.AllFilesFilter
+import io.belov.grails.filters.ParentFilter
 import io.belov.grails.filters.SingleFileFilter
 import org.apache.commons.lang.SystemUtils
 
@@ -108,7 +109,7 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
                 Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
                     @Override
                     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                        if (dir != start) register(dir);
+                        if (dir != start) register(dir, ParentFilter.instance);
                         return FileVisitResult.CONTINUE;
                     }
                 });
@@ -130,12 +131,15 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
 
     @Override
     protected processCreatedFolder(File file) {
-        if (!SystemUtils.IS_OS_WINDOWS) registerAll(file.toPath())
+        if (!SystemUtils.IS_OS_WINDOWS) registerAll(file.toPath(), ParentFilter.instance)
     }
 
     @Override
     protected isTrackedFile(File file) {
         def filter = filtersContainer.getFilterForFolder(file)
+
+        println "${filtersContainer.dirsWithFilters}"
+        println "${file} : ${filter}"
 
         if (filter) {
             return filter.accept(file.toPath())

@@ -7,6 +7,7 @@ import groovy.util.logging.Slf4j
 import io.belov.grails.filters.EndsWithFilter
 import io.belov.grails.filters.FileExtensionFilter
 import io.belov.grails.win.WindowsBaseDirectoryWatcher
+import org.apache.commons.lang.SystemUtils
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -34,17 +35,19 @@ class CommonDirectoryWatcherSpec extends Specification {
         def getter = getWatcher
         def watcher = getter(testFolder)
 
-        log.info("Testing ${watcher}")
+        if (watcher) {
+            log.info("Testing ${watcher}")
 
-        watcher.startAsync()
-        assert directoryWatcherSpec.testCreateChange(watcher, testFolder)
-        assert directoryWatcherSpec.testRecursiveChange(watcher, testFolder)
-        watcher.stop()
+            watcher.start()
+            assert directoryWatcherSpec.testCreateChange(watcher, testFolder)
+            assert directoryWatcherSpec.testRecursiveChange(watcher, testFolder)
+            watcher.stop()
+        }
 
         where:
         getWatcher <<
                 [{ folder ->
-                    new WindowsBaseDirectoryWatcher(folder, true)
+                    WindowsWatcher(folder, true)
                 }, { folder ->
                     new RecursiveDirectoryWatcher().addWatchDirectory(folder.toPath())
                 }]
@@ -55,23 +58,25 @@ class CommonDirectoryWatcherSpec extends Specification {
         def getter = getWatcher
         def watcher = getter(testFolder)
 
-        watcher.
-                addWatchDirectory(testFolder.toPath(), new FileExtensionFilter('txt')).
-                addWatchDirectory(testFolder.toPath(), new EndsWithFilter('-file.png'))
+        if (watcher) {
+            watcher.
+                    addWatchDirectory(testFolder.toPath(), new FileExtensionFilter('txt')).
+                    addWatchDirectory(testFolder.toPath(), new EndsWithFilter('-file.png'))
 
-        def files = ["a.txt", "b.tmp", "simple-file.png"]
-        def createEvents = [ENTRY_CREATE, [], ENTRY_CREATE]
-        def changeEvents = [ENTRY_MODIFY, [], ENTRY_MODIFY]
+            def files = ["a.txt", "b.tmp", "simple-file.png"]
+            def createEvents = [ENTRY_CREATE, [], ENTRY_CREATE]
+            def changeEvents = [ENTRY_MODIFY, [], ENTRY_MODIFY]
 
-        log.info("Testing ${watcher}")
+            log.info("Testing ${watcher}")
 
-        watcher.startAsync()
-        assert directoryWatcherSpec.testRecursiveFilters(watcher, testFolder, files, createEvents, changeEvents)
-        watcher.stop()
+            watcher.start()
+            assert directoryWatcherSpec.testRecursiveFilters(watcher, testFolder, files, createEvents, changeEvents)
+            watcher.stop()
+        }
 
         where:
         getWatcher <<
-                [{ folder -> new WindowsBaseDirectoryWatcher(folder)
+                [{ folder -> WindowsWatcher(folder)
                 }, { folder -> new RecursiveDirectoryWatcher() }]
     }
 
@@ -82,26 +87,28 @@ class CommonDirectoryWatcherSpec extends Specification {
         def getter = getWatcher
         def watcher = getter(testFolder)
 
-        //let's create subfolder before register it
-        subFolder.mkdirs()
+        if (watcher) {
+            //let's create subfolder before register it
+            subFolder.mkdirs()
 
-        watcher.
-                addWatchDirectory(testFolder.toPath(), new FileExtensionFilter('txt')).
-                addWatchDirectory(subFolder.toPath(), new EndsWithFilter('-file.png'))
+            watcher.
+                    addWatchDirectory(testFolder.toPath(), new FileExtensionFilter('txt')).
+                    addWatchDirectory(subFolder.toPath(), new EndsWithFilter('-file.png'))
 
-        def files = ["a.txt", "b.tmp", "${subFolderPath}/simple-file.png", "${subFolderPath}/c.txt"]
-        def createEvents = [ENTRY_CREATE, [], ENTRY_CREATE, []]
-        def changeEvents = [ENTRY_MODIFY, [], ENTRY_MODIFY, []]
+            def files = ["a.txt", "b.tmp", "${subFolderPath}/simple-file.png", "${subFolderPath}/c.txt"]
+            def createEvents = [ENTRY_CREATE, [], ENTRY_CREATE, []]
+            def changeEvents = [ENTRY_MODIFY, [], ENTRY_MODIFY, []]
 
-        log.info("Testing ${watcher}")
+            log.info("Testing ${watcher}")
 
-        watcher.startAsync()
-        assert directoryWatcherSpec.testFilters(watcher, testFolder, files, createEvents, changeEvents)
-        watcher.stop()
+            watcher.start()
+            assert directoryWatcherSpec.testFilters(watcher, testFolder, files, createEvents, changeEvents)
+            watcher.stop()
+        }
 
         where:
         getWatcher <<
-                [{ folder -> new WindowsBaseDirectoryWatcher(folder)
+                [{ folder -> WindowsWatcher(folder)
                 }, { folder -> new RecursiveDirectoryWatcher() }]
     }
 
@@ -110,19 +117,33 @@ class CommonDirectoryWatcherSpec extends Specification {
         def getter = getWatcher
         def watcher = getter(folder)
 
-        watcher.startAsync()
-        assert directoryWatcherSpec.testSaveChange(watcher, folder, delay)
-        watcher.stop()
+        if (watcher) {
+            watcher.start()
+            assert directoryWatcherSpec.testSaveChange(watcher, folder, delay)
+            watcher.stop()
+        }
 
         where:
         folder << [new File(testFolder, "./sub-directory/"), testFolder]
         delay << [0, 6000]
         getWatcher <<
                 [{ folder ->
-                    new WindowsBaseDirectoryWatcher(testFolder, true).addWatchDirectory(folder.toPath())
+                    WindowsWatcher(testFolder, true)?.addWatchDirectory(folder.toPath())
                 }, { folder ->
                     new SavedDirectoryWatcher(new RecursiveDirectoryWatcher()).addWatchDirectory(folder.toPath())
                 }]
+    }
+
+    def "test move folder with tracked content"() {
+        //todo
+    }
+
+    private WindowsWatcher(File folder, Boolean watchForAnyChanges = false) {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            return new WindowsBaseDirectoryWatcher(folder, watchForAnyChanges)
+        } else {
+            return null
+        }
     }
 
 }
