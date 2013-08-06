@@ -3,10 +3,7 @@
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
 package io.belov.grails.filters
-
 import org.apache.commons.io.FilenameUtils
-
-import java.nio.file.Path
 
 class FileAnyExtensionFilter implements FileFilter {
 
@@ -17,8 +14,8 @@ class FileAnyExtensionFilter implements FileFilter {
     }
 
     @Override
-    boolean accept(Path file) {
-        def extension = FilenameUtils.getExtension(file.fileName.toString()).toLowerCase()
+    boolean accept(File file) {
+        def extension = FilenameUtils.getExtension(file.name).toLowerCase()
 
         return extensions.any { it == extension }
     }

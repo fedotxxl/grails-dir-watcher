@@ -49,7 +49,7 @@ class CommonDirectoryWatcherSpec extends Specification {
                 [{ folder ->
                     WindowsWatcher(folder, true)
                 }, { folder ->
-                    new RecursiveDirectoryWatcher().addWatchDirectory(folder.toPath())
+                    new RecursiveDirectoryWatcher().addWatchDirectory(folder)
                 }]
     }
 
@@ -60,8 +60,8 @@ class CommonDirectoryWatcherSpec extends Specification {
 
         if (watcher) {
             watcher.
-                    addWatchDirectory(testFolder.toPath(), new FileExtensionFilter('txt')).
-                    addWatchDirectory(testFolder.toPath(), new EndsWithFilter('-file.png'))
+                    addWatchDirectory(testFolder, new FileExtensionFilter('txt')).
+                    addWatchDirectory(testFolder, new EndsWithFilter('-file.png'))
 
             def files = ["a.txt", "b.tmp", "simple-file.png"]
             def createEvents = [ENTRY_CREATE, [], ENTRY_CREATE]
@@ -92,8 +92,8 @@ class CommonDirectoryWatcherSpec extends Specification {
             subFolder.mkdirs()
 
             watcher.
-                    addWatchDirectory(testFolder.toPath(), new FileExtensionFilter('txt')).
-                    addWatchDirectory(subFolder.toPath(), new EndsWithFilter('-file.png'))
+                    addWatchDirectory(testFolder, new FileExtensionFilter('txt')).
+                    addWatchDirectory(subFolder, new EndsWithFilter('-file.png'))
 
             def files = ["a.txt", "b.tmp", "${subFolderPath}/simple-file.png", "${subFolderPath}/c.txt"]
             def createEvents = [ENTRY_CREATE, [], ENTRY_CREATE, []]
@@ -128,9 +128,9 @@ class CommonDirectoryWatcherSpec extends Specification {
         delay << [0, 6000]
         getWatcher <<
                 [{ folder ->
-                    WindowsWatcher(testFolder, true)?.addWatchDirectory(folder.toPath())
+                    WindowsWatcher(testFolder, true)?.addWatchDirectory(folder)
                 }, { folder ->
-                    new SavedDirectoryWatcher(new RecursiveDirectoryWatcher()).addWatchDirectory(folder.toPath())
+                    new SavedDirectoryWatcher(new RecursiveDirectoryWatcher()).addWatchDirectory(folder)
                 }]
     }
 

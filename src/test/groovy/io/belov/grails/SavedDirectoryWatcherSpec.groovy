@@ -1,8 +1,5 @@
 package io.belov.grails
-
 import spock.lang.Specification
-
-import java.nio.file.Paths
 
 class SavedDirectoryWatcherSpec extends Specification {
 
@@ -10,10 +7,10 @@ class SavedDirectoryWatcherSpec extends Specification {
         when:
         Thread.start {
             def watcher = new SavedDirectoryWatcher(new RecursiveDirectoryWatcher())
-            watcher.addWatchDirectory(Paths.get("D:/abc/123"))
-            watcher.addWatchDirectory(Paths.get("D:/abc/123/456"))
-            watcher.addWatchDirectory(Paths.get("D:/abc/123/456/678"))
-            watcher.addWatchDirectory(Paths.get("D:/abc/123/9"))
+            watcher.addWatchDirectory(new File("D:/abc/123"))
+            watcher.addWatchDirectory(new File("D:/abc/123/456"))
+            watcher.addWatchDirectory(new File("D:/abc/123/456/678"))
+            watcher.addWatchDirectory(new File("D:/abc/123/9"))
             watcher.startAsync()
         }
 

@@ -4,13 +4,11 @@
  */
 package io.belov.grails.filters
 
-import java.nio.file.Path
-
 @Singleton
 class AllFilesFilter implements FileFilter {
 
     @Override
-    boolean accept(Path file) {
+    boolean accept(File file) {
         return true
     }
 

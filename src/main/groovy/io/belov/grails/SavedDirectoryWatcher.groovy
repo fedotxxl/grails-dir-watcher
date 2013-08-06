@@ -39,19 +39,19 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     }
 
     @Override
-    DirectoryWatcher addWatchFile(Path fileToWatch) {
-        if (fileToWatch.toFile().exists()) {
+    DirectoryWatcher addWatchFile(File fileToWatch) {
+        if (fileToWatch.exists()) {
             watcher.addWatchFile(fileToWatch)
         } else {
-            addWatchDirectory(fileToWatch.parent, new SingleFileFilter(fileToWatch))
+            addWatchDirectory(fileToWatch.parentFile, new SingleFileFilter(fileToWatch))
         }
 
         return this
     }
 
     @Override
-    DirectoryWatcher addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter filter = null) {
-        def folder = getNormalizedFile(dir.toFile())
+    DirectoryWatcher addWatchDirectory(File dir, io.belov.grails.filters.FileFilter filter = null) {
+        def folder = getNormalizedFile(dir)
 
         dirs << folder
         filtersContainer.addFilterForFolder(folder, filter)
@@ -117,7 +117,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     private trackFolder(File folder) {
         log.trace "Start tracking remembered folder {}", folder
 
-        watcher.addWatchDirectory(folder.toPath(), filtersContainer.getFilterForFolder(folder))
+        watcher.addWatchDirectory(folder, filtersContainer.getFilterForFolder(folder))
     }
 
     private iterateFolderAndTriggerCreateEvent(File folder) {
@@ -132,10 +132,11 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
                 return FileVisitResult.CONTINUE;
             }
 
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException
             {
+                def file = pathToFile(path)
                 if (filters.accept(file)) {
-                    triggerCreateEvent(pathToFile(file))
+                    triggerCreateEvent(file)
                 }
                 return FileVisitResult.CONTINUE;
             }

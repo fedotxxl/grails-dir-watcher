@@ -10,10 +10,10 @@ import io.belov.grails.FileUtils
 import io.belov.grails.FiltersContainer
 import io.belov.grails.filters.AllFilesFilter
 import io.belov.grails.filters.SingleFileFilter
-import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
 
 import java.nio.file.FileSystems
-import java.nio.file.Path
+
+import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
 
 @Slf4j
 class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
@@ -24,14 +24,13 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
     WindowsBaseDirectoryWatcher(File base, Boolean watchForAnyChanges = false) {
         this.watcher = FileSystems.getDefault().newWatchService();
         this.base = FileUtils.getNormalizedFile(base)
-        if (watchForAnyChanges) addWatchDirectory(base.toPath(), AllFilesFilter.instance)
+        if (watchForAnyChanges) addWatchDirectory(base, AllFilesFilter.instance)
     }
 
     @Override
-    DirectoryWatcher addWatchFile(Path fileToWatch) {
-        def file = fileToWatch.toFile()
-        if (isWatchableDirectory(file.parentFile)) {
-            filtersContainer.addFilterForFolder(file.parentFile, new SingleFileFilter(fileToWatch))
+    DirectoryWatcher addWatchFile(File fileToWatch) {
+        if (isWatchableDirectory(fileToWatch.parentFile)) {
+            filtersContainer.addFilterForFolder(fileToWatch.parentFile, new SingleFileFilter(fileToWatch))
         } else {
             log.error "File ${fileToWatch} is not child of ${base}"
         }
@@ -40,8 +39,7 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
     }
 
     @Override
-    DirectoryWatcher addWatchDirectory(Path dirToWatch, io.belov.grails.filters.FileFilter f = null) {
-        def dir = dirToWatch.toFile()
+    DirectoryWatcher addWatchDirectory(File dir, io.belov.grails.filters.FileFilter f = null) {
         if (isWatchableDirectory(dir)) {
             filtersContainer.addFilterForFolder(dir, f)
         } else {
@@ -69,7 +67,7 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
         def filter = filtersContainer.getFilterForFolder(file)
 
         if (filter) {
-            return filter.accept(file.toPath())
+            return filter.accept(file)
         } else {
             return false
         }

@@ -4,8 +4,6 @@
  */
 package io.belov.grails.filters
 
-import java.nio.file.Path
-
 class CompositeFilter implements FileFilter {
     private filters = [] as Set
 
@@ -16,7 +14,7 @@ class CompositeFilter implements FileFilter {
     }
 
     @Override
-    boolean accept(Path file) {
+    boolean accept(File file) {
         if (filters.size() > 0) {
             return filters.any { it.accept(file) }
         } else {

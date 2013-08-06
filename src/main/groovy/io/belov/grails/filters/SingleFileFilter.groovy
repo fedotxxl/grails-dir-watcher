@@ -4,23 +4,21 @@
  */
 package io.belov.grails.filters
 
-import java.nio.file.Path
-
 class SingleFileFilter implements FileFilter {
 
-    private Path path
+    private File file
 
-    SingleFileFilter(Path path) {
-        this.path = path
+    SingleFileFilter(File file) {
+        this.file = file
     }
 
     @Override
-    boolean accept(Path file) {
-        return path == file
+    boolean accept(File file) {
+        return this.file.canonicalPath == file.canonicalPath
     }
 
     @Override
     String toString() {
-        return "SingleFileFilter: ${path}"
+        return "SingleFileFilter: ${file}"
     }
 }

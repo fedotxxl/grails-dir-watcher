@@ -3,11 +3,8 @@
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
 package io.belov.grails
-
 import io.belov.grails.filters.FileExtensionFilter
 import spock.lang.Specification
-
-import java.nio.file.Paths
 
 class RecursiveDirectoryWatcherSpec extends Specification {
 
@@ -15,7 +12,7 @@ class RecursiveDirectoryWatcherSpec extends Specification {
         when:
         Thread.start {
             def watcher = new RecursiveDirectoryWatcher()
-            watcher.addWatchDirectory(Paths.get("D:/abc/123"))
+            watcher.addWatchDirectory(new File("D:/abc/123"))
             watcher.startAsync()
         }
 
@@ -29,10 +26,10 @@ class RecursiveDirectoryWatcherSpec extends Specification {
         when:
         Thread.start {
             def watcher = new RecursiveDirectoryWatcher()
-            watcher.addWatchDirectory(Paths.get("D:/abc/w/"))
-            watcher.addWatchDirectory(Paths.get("D:/abc/w/123"))
-            watcher.addWatchDirectory(Paths.get("D:/abc/w/123"), new FileExtensionFilter("txt"))
-            watcher.addWatchDirectory(Paths.get("D:/abc/w/456"), new FileExtensionFilter("txt"))
+            watcher.addWatchDirectory(new File("D:/abc/w/"))
+            watcher.addWatchDirectory(new File("D:/abc/w/123"))
+            watcher.addWatchDirectory(new File("D:/abc/w/123"), new FileExtensionFilter("txt"))
+            watcher.addWatchDirectory(new File("D:/abc/w/456"), new FileExtensionFilter("txt"))
             watcher.startAsync()
         }
 
@@ -46,8 +43,8 @@ class RecursiveDirectoryWatcherSpec extends Specification {
         when:
         Thread.start {
             def watcher = new RecursiveDirectoryWatcher()
-            watcher.addWatchDirectory(Paths.get("D:/abc/123"))
-            watcher.addWatchFile(Paths.get("D:/abc/New Text Document.txt"))
+            watcher.addWatchDirectory(new File("D:/abc/123"))
+            watcher.addWatchFile(new File("D:/abc/New Text Document.txt"))
             watcher.startAsync()
         }
 

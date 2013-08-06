@@ -4,8 +4,6 @@
  */
 package io.belov.grails.filters
 
-import java.nio.file.Path
-
 class EndsWithFilter implements FileFilter {
 
     private String end
@@ -16,8 +14,8 @@ class EndsWithFilter implements FileFilter {
     }
 
     @Override
-    boolean accept(Path file) {
-        return file.toString().endsWith(end)
+    boolean accept(File file) {
+        return file.canonicalPath.endsWith(end)
     }
 
     @Override

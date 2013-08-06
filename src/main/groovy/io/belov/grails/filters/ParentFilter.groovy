@@ -4,8 +4,6 @@
  */
 package io.belov.grails.filters
 
-import java.nio.file.Path
-
 @Singleton
 /**
  * Just marks to use parent filter
@@ -13,7 +11,7 @@ import java.nio.file.Path
 class ParentFilter implements FileFilter {
 
     @Override
-    boolean accept(Path file) {
+    boolean accept(File file) {
         return false
     }
 

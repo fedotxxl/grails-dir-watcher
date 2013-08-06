@@ -1,7 +1,5 @@
 package io.belov.grails
 
-import java.nio.file.Path
-
 public interface DirectoryWatcher {
 
     /**
@@ -16,7 +14,7 @@ public interface DirectoryWatcher {
      *
      * @param fileToWatch The file to watch
      */
-    DirectoryWatcher addWatchFile(Path fileToWatch)
+    DirectoryWatcher addWatchFile(File fileToWatch)
 
     /**
      * Adds a directory to watch for the given file and extensions.
@@ -24,7 +22,7 @@ public interface DirectoryWatcher {
      * @param dir The directory
      * @param fileExtensions The extensions
      */
-    DirectoryWatcher addWatchDirectory(Path dir, io.belov.grails.filters.FileFilter f);
+    DirectoryWatcher addWatchDirectory(File dir, io.belov.grails.filters.FileFilter f);
 
     /**
      * Starts watching process
