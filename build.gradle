@@ -22,7 +22,7 @@ dependencies {
 
     //add logging support
     compile "org.slf4j:slf4j-api:$slf4jVersion"
-    compile "ch.qos.logback:logback-classic:1.0.6"
+    testCompile "ch.qos.logback:logback-classic:1.0.6"
 
     //testing
     testCompile "org.spockframework:spock-core:$spockVersion" //spock framework
