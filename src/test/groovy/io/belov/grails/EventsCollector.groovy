@@ -59,5 +59,9 @@ class EventsCollector {
         return answer
     }
 
+    Map sleepAndGetEventsForLastMs(Integer ms, Boolean shouldClear = true) {
+        sleep(ms)
+        return eventsForLastMs(ms, shouldClear)
+    }
 
 }

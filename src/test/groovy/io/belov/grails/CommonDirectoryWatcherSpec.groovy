@@ -8,11 +8,14 @@ import io.belov.grails.filters.EndsWithFilter
 import io.belov.grails.filters.FileExtensionFilter
 import io.belov.grails.watchers.RecursiveDirectoryWatcher
 import io.belov.grails.watchers.SavedDirectoryWatcher
+import io.belov.grails.watchers.SavedRecursiveDirectoryWatcher
 import io.belov.grails.watchers.WindowsBaseDirectoryWatcher
+import org.apache.commons.io.FileUtils as ApacheFileUtils
 import org.apache.commons.lang.SystemUtils
 import spock.lang.Shared
 import spock.lang.Specification
 
+import static CommonDirectoryWatcherTestHelper.WAIT_FOR_CHANGES_DELAY
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 
@@ -137,7 +140,59 @@ class CommonDirectoryWatcherSpec extends Specification {
     }
 
     def "test move folder with tracked content"() {
-        //todo
+        expect:
+        def events
+        def fileNameA = 'abc.txt'
+        def fileNameB = 'efg.tmp'
+
+        def folderA = new File(testFolder, "./a/")
+        def folderB = new File(testFolder, "./b/")
+
+        folderA.mkdirs()
+        folderB.mkdirs()
+
+        def getter = getWatcher
+        def watcher = getter(folderA)
+
+        if (watcher) {
+            watcher.startAsync()
+
+            def eventsCollector = new EventsCollector(watcher)
+
+            //let's create few files
+            ApacheFileUtils.touch(new File(folderA, fileNameA))
+            ApacheFileUtils.touch(new File(folderA, fileNameB))
+
+            events = eventsCollector.sleepAndGetEventsForLastMs(WAIT_FOR_CHANGES_DELAY)
+            assert directoryWatcherSpec.checkEvents(folderA, [fileNameA, fileNameB], [ENTRY_CREATE, ENTRY_CREATE], events)
+
+            //move files to unwatched folder
+            ApacheFileUtils.moveFileToDirectory(new File(folderA, fileNameA), folderB, true)
+            ApacheFileUtils.moveFileToDirectory(new File(folderA, fileNameB), folderB, true)
+
+            //check that folderB is not tracked
+            events = eventsCollector.sleepAndGetEventsForLastMs(WAIT_FOR_CHANGES_DELAY)
+            assert directoryWatcherSpec.checkEvents(folderB, [fileNameA, fileNameB], [[], []], events)
+
+            //move folderB to tracked folderA
+            def targetFolder = new File(folderA, folderB.name)
+            ApacheFileUtils.moveDirectory(folderB, targetFolder)
+
+            //wait and check events
+            events = eventsCollector.sleepAndGetEventsForLastMs(delay + WAIT_FOR_CHANGES_DELAY)
+            assert directoryWatcherSpec.checkEvents(targetFolder, [fileNameA, fileNameB], [ENTRY_CREATE, ENTRY_CREATE], events)
+
+            watcher.stop()
+        }
+
+        where:
+        delay << [0, 6000]
+        getWatcher <<
+                [{ folder ->
+                    WindowsWatcher(folder, true)
+                }, { folder ->
+                    new SavedRecursiveDirectoryWatcher().addWatchDirectory(folder)
+                }]
     }
 
     private WindowsWatcher(File folder, Boolean watchForAnyChanges = false) {

@@ -16,7 +16,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 @Slf4j
 class CommonDirectoryWatcherTestHelper {
 
-    private static final WAIT_FOR_CHANGES_DELAY = 500
+    public static final WAIT_FOR_CHANGES_DELAY = 500
 
     boolean testCreateChange(DirectoryWatcher watcher, File folder) {
         return doTestCreateChange(watcher, folder)
@@ -69,14 +69,11 @@ class CommonDirectoryWatcherTestHelper {
         def eventsCollector = new EventsCollector(watcher)
 
         def checkEvents = { List<String> changedFiles, List expected, result ->
-            changedFiles.eachWithIndex { def file, int i ->
-                assert result[getFile(folder, file).canonicalPath] == toList(expected[i])
-            }
+            checkEvents(folder, changedFiles, expected, result)
         }
 
         def waitAndCheckEvents = { List changedFiles, List expected ->
-            sleep(WAIT_FOR_CHANGES_DELAY)
-            def events = eventsCollector.eventsForLastMs(WAIT_FOR_CHANGES_DELAY)
+            def events = eventsCollector.sleepAndGetEventsForLastMs(WAIT_FOR_CHANGES_DELAY)
             checkEvents(files, expected, events)
         }
 
@@ -91,6 +88,14 @@ class CommonDirectoryWatcherTestHelper {
         //change files / check events
         files.each { touchFile(getFile(folder, it), 'change') }
         waitAndCheckEvents(files, changeEvents)
+
+        return true
+    }
+
+    boolean checkEvents(File folder, List<String> files, List expected, Map result) {
+        files.eachWithIndex { def file, int i ->
+            assert result[getFile(folder, file).canonicalPath] == toList(expected[i])
+        }
 
         return true
     }

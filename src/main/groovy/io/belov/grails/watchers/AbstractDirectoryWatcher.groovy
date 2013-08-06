@@ -87,12 +87,12 @@ abstract class AbstractDirectoryWatcher implements DirectoryWatcher {
                     Path name = ev.context();
                     Path child = dir.resolve(name);
                     File file = child.toFile();
-                    Boolean trackChecker = TrackChecker.isTrackChecker(file)
+                    Boolean isTrackChecker = TrackChecker.isTrackChecker(file)
 
                     // print out event
-                    if (!trackChecker && file.isFile()) log.trace("{}: {}", eventType.name(), child);
+                    if (isLogEvent(eventType, file, isTrackChecker)) log.trace("{}: {}", eventType.name(), child);
 
-                    if (trackChecker || isTrackedFile(file)) {
+                    if (isTrackChecker || isTrackedFile(file)) {
                         eventsQueue.addEvent(eventType, file)
                     } else {
                         log.trace("Skip event {} for file {} ", eventType, file)
@@ -117,6 +117,18 @@ abstract class AbstractDirectoryWatcher implements DirectoryWatcher {
                 }
             } catch (e) {
                 log.error("Exception on watching file changes", e)
+            }
+        }
+    }
+
+    protected isLogEvent(WatchEvent.Kind eventType, file, isTrackChecker) {
+        if (file.isFile()) {
+            return !isTrackChecker
+        } else {
+            if (eventType == ENTRY_CREATE || eventType == ENTRY_DELETE) {
+                return true
+            } else {
+                return false //don't log change folder events
             }
         }
     }
