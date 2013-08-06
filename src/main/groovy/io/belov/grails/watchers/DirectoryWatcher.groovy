@@ -1,4 +1,6 @@
-package io.belov.grails
+package io.belov.grails.watchers
+
+import io.belov.grails.FileChangeListener
 
 public interface DirectoryWatcher {
 

@@ -4,6 +4,7 @@
  */
 package io.belov.grails
 import io.belov.grails.filters.FileExtensionFilter
+import io.belov.grails.watchers.RecursiveDirectoryWatcher
 import spock.lang.Specification
 
 class RecursiveDirectoryWatcherSpec extends Specification {

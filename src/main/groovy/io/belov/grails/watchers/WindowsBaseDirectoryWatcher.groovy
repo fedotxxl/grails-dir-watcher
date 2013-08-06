@@ -2,10 +2,8 @@
  * WindowsBaseDirectoryWatcher
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails.win
+package io.belov.grails.watchers
 import groovy.util.logging.Slf4j
-import io.belov.grails.AbstractDirectoryWatcher
-import io.belov.grails.DirectoryWatcher
 import io.belov.grails.FileUtils
 import io.belov.grails.FiltersContainer
 import io.belov.grails.filters.AllFilesFilter

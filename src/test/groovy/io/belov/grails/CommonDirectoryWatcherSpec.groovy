@@ -6,7 +6,9 @@ package io.belov.grails
 import groovy.util.logging.Slf4j
 import io.belov.grails.filters.EndsWithFilter
 import io.belov.grails.filters.FileExtensionFilter
-import io.belov.grails.win.WindowsBaseDirectoryWatcher
+import io.belov.grails.watchers.RecursiveDirectoryWatcher
+import io.belov.grails.watchers.SavedDirectoryWatcher
+import io.belov.grails.watchers.WindowsBaseDirectoryWatcher
 import org.apache.commons.lang.SystemUtils
 import spock.lang.Shared
 import spock.lang.Specification

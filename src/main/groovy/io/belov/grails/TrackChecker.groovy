@@ -3,6 +3,9 @@
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
 package io.belov.grails
+
+import io.belov.grails.watchers.DirectoryWatcher
+
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap

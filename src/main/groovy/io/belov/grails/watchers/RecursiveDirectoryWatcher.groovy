@@ -2,8 +2,9 @@
  * RecursiveDirectoryWatcher
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails
+package io.belov.grails.watchers
 import groovy.util.logging.Slf4j
+import io.belov.grails.FiltersContainer
 import io.belov.grails.filters.AllFilesFilter
 import io.belov.grails.filters.ParentFilter
 import io.belov.grails.filters.SingleFileFilter

@@ -5,6 +5,7 @@
 package io.belov.grails
 
 import groovy.util.logging.Slf4j
+import io.belov.grails.watchers.DirectoryWatcher
 import org.apache.commons.io.FileUtils as ApacheFileUtils
 
 import java.nio.file.WatchEvent

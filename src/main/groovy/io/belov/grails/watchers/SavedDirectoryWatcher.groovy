@@ -1,5 +1,9 @@
-package io.belov.grails
+package io.belov.grails.watchers
 import groovy.util.logging.Slf4j
+import io.belov.grails.FileChangeListener
+import io.belov.grails.FileTree
+import io.belov.grails.FiltersContainer
+import io.belov.grails.TrackChecker
 import io.belov.grails.filters.SingleFileFilter
 
 import java.nio.file.FileVisitResult

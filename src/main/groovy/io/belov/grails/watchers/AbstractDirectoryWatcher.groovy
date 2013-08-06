@@ -2,8 +2,11 @@
  * AbstractDirectoryWatcher
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails
+package io.belov.grails.watchers
 import groovy.util.logging.Slf4j
+import io.belov.grails.EventsQueue
+import io.belov.grails.FileChangeListener
+import io.belov.grails.TrackChecker
 
 import java.nio.file.*
 import java.util.concurrent.ConcurrentHashMap

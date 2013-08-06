@@ -1,4 +1,7 @@
 package io.belov.grails
+
+import io.belov.grails.watchers.RecursiveDirectoryWatcher
+import io.belov.grails.watchers.SavedDirectoryWatcher
 import spock.lang.Specification
 
 class SavedDirectoryWatcherSpec extends Specification {
