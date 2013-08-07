@@ -10,6 +10,7 @@ import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
+import java.nio.file.StandardWatchEventKinds
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
@@ -20,13 +21,13 @@ import static io.belov.grails.FileUtils.getNormalizedFile
 class SavedDirectoryWatcher implements DirectoryWatcher {
 
     protected List<File> dirs = []
-    private DirectoryWatcher watcher
+    private TriggerableDirectoryWatcher watcher
     protected TrackChecker trackChecker
     protected Integer sleepTime = 5000
     protected Boolean active = true
     protected FiltersContainer filtersContainer = new FiltersContainer()
 
-    SavedDirectoryWatcher(DirectoryWatcher watcher) {
+    SavedDirectoryWatcher(TriggerableDirectoryWatcher watcher) {
         this.watcher = watcher
         this.trackChecker = new TrackChecker(watcher)
     }
@@ -149,6 +150,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
 
     private triggerCreateEvent(File file) {
         log.debug "Triggering create event for remembered file {}", file
+        watcher.triggerEvent(file, StandardWatchEventKinds.ENTRY_CREATE)
     }
 
     private pathToFile(Path path) {

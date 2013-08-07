@@ -200,6 +200,7 @@ class CommonDirectoryWatcherSpec extends Specification {
         def events
         def fileNameA = 'abc.txt'
         def fileNameB = 'efg.tmp'
+        def subfolderName = 'c'
 
         def folderA = new File(testFolder, "./a/")
         def folderB = new File(testFolder, "./b/")
@@ -221,8 +222,8 @@ class CommonDirectoryWatcherSpec extends Specification {
             def eventsCollector = new EventsCollector(watcher)
 
             //let's create few files
-            ApacheFileUtils.touch(new File(folderB, fileNameA))
-            ApacheFileUtils.touch(new File(folderB, fileNameB))
+            ApacheFileUtils.touch(folderB << fileNameA)
+            ApacheFileUtils.touch(folderB << subfolderName << fileNameB)
 
             //check that folderB is not tracked
             assert directoryWatcherSpec.checkFolderIsNotTracked(watcher, folderB)
@@ -232,7 +233,8 @@ class CommonDirectoryWatcherSpec extends Specification {
 
             //wait and check events
             events = eventsCollector.sleepAndGetEventsForLastMs(delay + WAIT_FOR_CHANGES_DELAY)
-            assert directoryWatcherSpec.checkEvents(folderA, [fileNameA, fileNameB], [ENTRY_CREATE, ENTRY_CREATE], events)
+            assert directoryWatcherSpec.checkEvents(folderA, [fileNameA], [ENTRY_CREATE], events)
+            assert directoryWatcherSpec.checkEvents(folderA << subfolderName, [fileNameB], [ENTRY_CREATE], events)
 
             watcher.stop()
         }

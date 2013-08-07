@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
 import static java.nio.file.StandardWatchEventKinds.*
 
 @Slf4j
-abstract class AbstractDirectoryWatcher implements DirectoryWatcher {
+abstract class AbstractDirectoryWatcher implements TriggerableDirectoryWatcher {
 
     protected volatile boolean active = true
     protected WatchService watcher
@@ -131,6 +131,10 @@ abstract class AbstractDirectoryWatcher implements DirectoryWatcher {
                 return false //don't log change folder events
             }
         }
+    }
+
+    void triggerEvent(File file, WatchEvent.Kind eventType) {
+        eventsQueue.addEvent(eventType, file)
     }
 
     abstract protected processCreatedFolder(File file)

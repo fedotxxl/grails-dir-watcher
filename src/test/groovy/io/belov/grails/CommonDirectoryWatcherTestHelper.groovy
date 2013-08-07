@@ -15,6 +15,16 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 @Slf4j
 class CommonDirectoryWatcherTestHelper {
 
+    static {
+        File.metaClass.sub = { name ->
+            return new File(delegate, name)
+        }
+
+        File.metaClass.leftShift = {
+            return new File(delegate, it)
+        }
+    }
+
     public static final WAIT_FOR_CHANGES_DELAY = 500
 
     boolean testCreateChange(DirectoryWatcher watcher, File folder) {
