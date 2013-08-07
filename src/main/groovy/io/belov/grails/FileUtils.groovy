@@ -18,7 +18,7 @@ class FileUtils {
         return getNormalizedFile(path.toFile())
     }
 
-    static getNonExistingFile(File parent) {
+    static File getNonExistingFile(File parent) {
         def file = null
 
         while (!file) {

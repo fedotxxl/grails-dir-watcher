@@ -195,6 +195,58 @@ class CommonDirectoryWatcherSpec extends Specification {
                 }]
     }
 
+    def "test restore tracked folder state with content"() {
+        setup:
+        def events
+        def fileNameA = 'abc.txt'
+        def fileNameB = 'efg.tmp'
+
+        def folderA = new File(testFolder, "./a/")
+        def folderB = new File(testFolder, "./b/")
+
+        folderA.mkdirs()
+        folderB.mkdirs()
+
+        expect:
+        def getter = getWatcher
+        def watcher = getter(folderA)
+
+        if (watcher) {
+            watcher.startAsync()
+
+            //check folder a is tacked and then delete it
+            assert directoryWatcherSpec.checkFolderIsTracked(watcher, folderA)
+            folderA.delete()
+
+            def eventsCollector = new EventsCollector(watcher)
+
+            //let's create few files
+            ApacheFileUtils.touch(new File(folderB, fileNameA))
+            ApacheFileUtils.touch(new File(folderB, fileNameB))
+
+            //check that folderB is not tracked
+            assert directoryWatcherSpec.checkFolderIsNotTracked(watcher, folderB)
+
+            //move watched folder
+            ApacheFileUtils.moveDirectory(folderB, folderA)
+
+            //wait and check events
+            events = eventsCollector.sleepAndGetEventsForLastMs(delay + WAIT_FOR_CHANGES_DELAY)
+            assert directoryWatcherSpec.checkEvents(folderA, [fileNameA, fileNameB], [ENTRY_CREATE, ENTRY_CREATE], events)
+
+            watcher.stop()
+        }
+
+        assert true
+
+        where:
+        delay << [6000]
+        getWatcher <<
+                [{ folder ->
+                    new SavedRecursiveDirectoryWatcher().addWatchDirectory(folder)
+                }]
+    }
+
     private WindowsWatcher(File folder, Boolean watchForAnyChanges = false) {
         if (SystemUtils.IS_OS_WINDOWS) {
             return new WindowsBaseDirectoryWatcher(folder, watchForAnyChanges)

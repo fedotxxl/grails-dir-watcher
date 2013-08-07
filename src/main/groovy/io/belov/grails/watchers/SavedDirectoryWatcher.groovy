@@ -19,12 +19,12 @@ import static io.belov.grails.FileUtils.getNormalizedFile
 @Slf4j
 class SavedDirectoryWatcher implements DirectoryWatcher {
 
-    private List<File> dirs = []
+    protected List<File> dirs = []
     private DirectoryWatcher watcher
-    private TrackChecker trackChecker
-    private Integer sleepTime = 5000
-    private Boolean active = true
-    private FiltersContainer filtersContainer = new FiltersContainer()
+    protected TrackChecker trackChecker
+    protected Integer sleepTime = 5000
+    protected Boolean active = true
+    protected FiltersContainer filtersContainer = new FiltersContainer()
 
     SavedDirectoryWatcher(DirectoryWatcher watcher) {
         this.watcher = watcher
@@ -79,7 +79,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
         }
     }
 
-    private watchUnwatchedDirsWithFilters() {
+    protected watchUnwatchedDirsWithFilters() {
         try {
             def futures = dirs.collect() { File folder ->
                 if (folder.exists() && folder.directory) {
@@ -118,13 +118,13 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
         }
     }
     
-    private trackFolder(File folder) {
+    protected trackFolder(File folder) {
         log.trace "Start tracking remembered folder {}", folder
 
         watcher.addWatchDirectory(folder, filtersContainer.getFilterForFolder(folder))
     }
 
-    private iterateFolderAndTriggerCreateEvent(File folder) {
+    protected iterateFolderAndTriggerCreateEvent(File folder) {
         log.trace "Triggering create event for remembered folder {}", folder
 
         io.belov.grails.filters.FileFilter filters = filtersContainer.getFilterForFolder(folder)

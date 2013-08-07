@@ -3,7 +3,6 @@
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
 package io.belov.grails
-
 import groovy.util.logging.Slf4j
 import io.belov.grails.watchers.DirectoryWatcher
 import org.apache.commons.io.FileUtils as ApacheFileUtils
@@ -122,6 +121,33 @@ class CommonDirectoryWatcherTestHelper {
         } else {
             return [o]
         }
+    }
+
+    boolean checkFolderIsTracked(DirectoryWatcher watcher, File folder) {
+        checkTrackFolder(watcher, folder, true)
+    }
+
+    boolean checkFolderIsNotTracked(DirectoryWatcher watcher, File folder) {
+        checkTrackFolder(watcher, folder, false)
+    }
+
+    protected checkTrackFolder(DirectoryWatcher watcher, File folder, Boolean result) {
+        def eventsCollector = new EventsCollector(watcher)
+        def a = FileUtils.getNonExistingFile(folder)
+        def b = FileUtils.getNonExistingFile(folder)
+
+        //let's create few files
+        ApacheFileUtils.touch(a)
+        ApacheFileUtils.touch(b)
+
+        def expected = (result) ? [ENTRY_CREATE, ENTRY_CREATE] : [[], []]
+        def events = eventsCollector.sleepAndGetEventsForLastMs(WAIT_FOR_CHANGES_DELAY)
+        assert checkEvents(folder, [a.name, b.name], expected, events)
+
+        a.delete()
+        b.delete()
+
+        return true
     }
 
 }
