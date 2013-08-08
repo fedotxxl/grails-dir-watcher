@@ -14,6 +14,7 @@ import org.apache.commons.io.FileUtils as ApacheFileUtils
 import org.apache.commons.lang.SystemUtils
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import static CommonDirectoryWatcherTestHelper.WAIT_FOR_CHANGES_DELAY
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
@@ -139,6 +140,7 @@ class CommonDirectoryWatcherSpec extends Specification {
                 }]
     }
 
+    @Unroll
     def "test move folder with tracked content"() {
         expect:
         def events
@@ -155,6 +157,8 @@ class CommonDirectoryWatcherSpec extends Specification {
         def watcher = getter(folderA)
 
         if (watcher) {
+            watcher.addWatchDirectory(folderA, new FileExtensionFilter("tmp"))
+            watcher.addWatchDirectory(folderA, new EndsWithFilter("abc.txt"))
             watcher.startAsync()
 
             def eventsCollector = new EventsCollector(watcher)
@@ -162,9 +166,10 @@ class CommonDirectoryWatcherSpec extends Specification {
             //let's create few files
             ApacheFileUtils.touch(new File(folderA, fileNameA))
             ApacheFileUtils.touch(new File(folderA, fileNameB))
+            ApacheFileUtils.touch(folderA << "filtered-file.bmp")
 
             events = eventsCollector.sleepAndGetEventsForLastMs(WAIT_FOR_CHANGES_DELAY)
-            assert directoryWatcherSpec.checkEvents(folderA, [fileNameA, fileNameB], [ENTRY_CREATE, ENTRY_CREATE], events)
+            assert directoryWatcherSpec.checkEvents(folderA, [fileNameA, fileNameB, "filtered-file.bmp"], [ENTRY_CREATE, ENTRY_CREATE, []], events)
 
             //move files to unwatched folder
             ApacheFileUtils.moveFileToDirectory(new File(folderA, fileNameA), folderB, true)
@@ -174,24 +179,28 @@ class CommonDirectoryWatcherSpec extends Specification {
             events = eventsCollector.sleepAndGetEventsForLastMs(WAIT_FOR_CHANGES_DELAY)
             assert directoryWatcherSpec.checkEvents(folderB, [fileNameA, fileNameB], [[], []], events)
 
+            //add few more files to test filters
+            ApacheFileUtils.touch(folderB << './c/' << "should-not-filter.tmp")
+            ApacheFileUtils.touch(folderB << "should-be-filtered.exe")
+
             //move folderB to tracked folderA
             def targetFolder = new File(folderA, folderB.name)
             ApacheFileUtils.moveDirectory(folderB, targetFolder)
 
             //wait and check events
-            events = eventsCollector.sleepAndGetEventsForLastMs(delay + WAIT_FOR_CHANGES_DELAY)
-            assert directoryWatcherSpec.checkEvents(targetFolder, [fileNameA, fileNameB], [ENTRY_CREATE, ENTRY_CREATE], events)
+            events = eventsCollector.sleepAndGetEventsForLastMs(WAIT_FOR_CHANGES_DELAY)
+            assert directoryWatcherSpec.checkEvents(targetFolder, [fileNameA, fileNameB, 'should-be-filtered.exe'], [ENTRY_CREATE, ENTRY_CREATE, []], events)
+            assert directoryWatcherSpec.checkEvents(targetFolder << './c/', ["should-not-filter.tmp"], [ENTRY_CREATE], events)
 
             watcher.stop()
         }
 
         where:
-        delay << [0, 6000]
         getWatcher <<
                 [{ folder ->
-                    WindowsWatcher(folder, true)
+                    WindowsWatcher(folder)
                 }, { folder ->
-                    new SavedRecursiveDirectoryWatcher().addWatchDirectory(folder)
+                    new RecursiveDirectoryWatcher()
                 }]
     }
 

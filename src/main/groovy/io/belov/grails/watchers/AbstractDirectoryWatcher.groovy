@@ -9,6 +9,7 @@ import io.belov.grails.FileChangeListener
 import io.belov.grails.TrackChecker
 
 import java.nio.file.*
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.ConcurrentHashMap
 
 import static java.nio.file.StandardWatchEventKinds.*
@@ -101,6 +102,7 @@ abstract class AbstractDirectoryWatcher implements TriggerableDirectoryWatcher {
                     // if directory is created, and watching recursively, then
                     // register it and its sub-directories
                     if (eventType == ENTRY_CREATE && Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
+                        triggerCreateEventForFolderContent(file)
                         processCreatedFolder(file);
                     }
                 }
@@ -140,5 +142,19 @@ abstract class AbstractDirectoryWatcher implements TriggerableDirectoryWatcher {
     abstract protected processCreatedFolder(File file)
     abstract protected isTrackedFile(File file)
     abstract protected isStopOnEmptyWatchList()
+
+    protected triggerCreateEventForFolderContent(File file) {
+        Files.walkFileTree(file.toPath(), new SimpleFileVisitor<Path>() {
+            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                def f = path.toFile()
+
+                if (isTrackedFile(f)) {
+                    eventsQueue.addEvent(ENTRY_CREATE, f)
+                }
+
+                return FileVisitResult.CONTINUE;
+            }
+        })
+    }
 
 }
