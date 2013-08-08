@@ -141,7 +141,11 @@ class CommonDirectoryWatcherTestHelper {
         checkTrackFolder(watcher, folder, false)
     }
 
-    protected checkTrackFolder(DirectoryWatcher watcher, File folder, Boolean result) {
+    boolean checkCreateModifyIsTracked(DirectoryWatcher watcher, File folder) {
+        checkTrackFolder(watcher, folder, true, true)
+    }
+
+    protected checkTrackFolder(DirectoryWatcher watcher, File folder, Boolean result, Boolean checkModify = false) {
         def eventsCollector = new EventsCollector(watcher)
         def a = FileUtils.getNonExistingFile(folder)
         def b = FileUtils.getNonExistingFile(folder)
@@ -153,6 +157,14 @@ class CommonDirectoryWatcherTestHelper {
         def expected = (result) ? [ENTRY_CREATE, ENTRY_CREATE] : [[], []]
         def events = eventsCollector.sleepAndGetEventsForLastMs(WAIT_FOR_CHANGES_DELAY)
         assert checkEvents(folder, [a.name, b.name], expected, events)
+
+        if (checkModify) {
+            ApacheFileUtils.touch(a)
+            ApacheFileUtils.touch(b)
+
+            events = eventsCollector.sleepAndGetEventsForLastMs(WAIT_FOR_CHANGES_DELAY)
+            assert checkEvents(folder, [a.name, b.name], [ENTRY_MODIFY, ENTRY_MODIFY], events)
+        }
 
         a.delete()
         b.delete()
