@@ -36,14 +36,13 @@ class CommonDirectoryWatcherSpec extends Specification {
         testFolder.deleteDir()
     }
 
+    @Unroll
     def "test recursive create change"() {
         expect:
         def getter = getWatcher
         def watcher = getter(testFolder)
 
         if (watcher) {
-            log.info("Testing ${watcher}")
-
             watcher.startAsync()
             assert directoryWatcherSpec.testCreateChange(watcher, testFolder)
             assert directoryWatcherSpec.testRecursiveChange(watcher, testFolder)
@@ -59,6 +58,7 @@ class CommonDirectoryWatcherSpec extends Specification {
                 }]
     }
 
+    @Unroll
     def "simple test filters"() {
         expect:
         def getter = getWatcher
@@ -73,8 +73,6 @@ class CommonDirectoryWatcherSpec extends Specification {
             def createEvents = [ENTRY_CREATE, [], ENTRY_CREATE]
             def changeEvents = [ENTRY_MODIFY, [], ENTRY_MODIFY]
 
-            log.info("Testing ${watcher}")
-
             watcher.startAsync()
             assert directoryWatcherSpec.testRecursiveFilters(watcher, testFolder, files, createEvents, changeEvents)
             watcher.stop()
@@ -86,6 +84,7 @@ class CommonDirectoryWatcherSpec extends Specification {
                 }, { folder -> new RecursiveDirectoryWatcher() }]
     }
 
+    @Unroll
     def "custom filters test"() {
         expect:
         def subFolderPath = './b'
@@ -105,8 +104,6 @@ class CommonDirectoryWatcherSpec extends Specification {
             def createEvents = [ENTRY_CREATE, [], ENTRY_CREATE, []]
             def changeEvents = [ENTRY_MODIFY, [], ENTRY_MODIFY, []]
 
-            log.info("Testing ${watcher}")
-
             watcher.startAsync()
             assert directoryWatcherSpec.testFilters(watcher, testFolder, files, createEvents, changeEvents)
             watcher.stop()
@@ -118,6 +115,7 @@ class CommonDirectoryWatcherSpec extends Specification {
                 }, { folder -> new RecursiveDirectoryWatcher() }]
     }
 
+    @Unroll
     def "test save change"() {
         expect:
         def getter = getWatcher
