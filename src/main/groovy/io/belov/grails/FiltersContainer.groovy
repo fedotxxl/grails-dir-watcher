@@ -28,10 +28,12 @@ class FiltersContainer {
     }
 
     void addFilterForFolder(Path folder, io.belov.grails.filters.FileFilter filter) {
-        addFilterForFolder(FileUtils.getNormalizedFile(folder), filter)
+        addFilterForFolder(folder.toFile(), filter)
     }
 
-    CompositeFilter getFilterForFolder(File folder) {
+    CompositeFilter getFilterForFolder(File f) {
+        def folder = FileUtils.getNormalizedFile(f)
+
         while(folder) {
             def filter = dirsWithFilters[folder.canonicalPath]
 
@@ -46,7 +48,7 @@ class FiltersContainer {
     }
 
     CompositeFilter getFilterForFolder(Path folder) {
-        return getFilterForFolder(FileUtils.getNormalizedFile(folder))
+        return getFilterForFolder(folder.toFile())
     }
 
     private isParentFilter(CompositeFilter filter) {

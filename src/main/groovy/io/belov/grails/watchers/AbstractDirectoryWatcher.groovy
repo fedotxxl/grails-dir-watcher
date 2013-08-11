@@ -6,6 +6,7 @@ package io.belov.grails.watchers
 import groovy.util.logging.Slf4j
 import io.belov.grails.EventsQueue
 import io.belov.grails.FileChangeListener
+import io.belov.grails.FiltersContainer
 import io.belov.grails.TrackChecker
 
 import java.nio.file.*
@@ -19,9 +20,18 @@ abstract class AbstractDirectoryWatcher implements TriggerableDirectoryWatcher {
 
     protected volatile boolean active = true
     protected WatchService watcher
+    protected FiltersContainer filtersContainer = new FiltersContainer()
     protected Map<WatchKey, Path> keys = new ConcurrentHashMap<>();
     protected EventsQueue eventsQueue = new EventsQueue()
     protected static final WatchEvent.Kind[] watchEvents = [ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE]
+
+    AbstractDirectoryWatcher() {
+        try {
+            this.watcher = FileSystems.getDefault().newWatchService();
+        } catch (IOException e) {
+            log.error("Exception on AbstractDirectoryWatcher startup", e);
+        }
+    }
 
 
     /**
@@ -32,7 +42,7 @@ abstract class AbstractDirectoryWatcher implements TriggerableDirectoryWatcher {
     @Override
     public void stop() {
         this.active = false
-        this.eventsQueue.setActive(false)
+        this.eventsQueue.stop()
     }
 
     /**
@@ -45,13 +55,13 @@ abstract class AbstractDirectoryWatcher implements TriggerableDirectoryWatcher {
         eventsQueue.addListener(listener);
     }
 
-    protected startEventsQueue() {
+    protected startAsyncEventsQueue() {
         Thread.start {
             eventsQueue.start()
         }
     }
 
-    protected startWatchingFileChanges() {
+    protected startAsyncWatchingFileChanges() {
         Thread.start {
             watchFileChanges()
         }
@@ -139,9 +149,7 @@ abstract class AbstractDirectoryWatcher implements TriggerableDirectoryWatcher {
         eventsQueue.addEvent(eventType, file)
     }
 
-    abstract protected processCreatedFolder(File file)
     abstract protected isTrackedFile(File file)
-    abstract protected isStopOnEmptyWatchList()
 
     protected triggerCreateEventForFolderContent(File file) {
         Files.walkFileTree(file.toPath(), new SimpleFileVisitor<Path>() {
@@ -155,6 +163,14 @@ abstract class AbstractDirectoryWatcher implements TriggerableDirectoryWatcher {
                 return FileVisitResult.CONTINUE;
             }
         })
+    }
+
+    protected isStopOnEmptyWatchList() {
+        return false
+    }
+
+    protected processCreatedFolder(File file) {
+        //by default do nothing
     }
 
 }

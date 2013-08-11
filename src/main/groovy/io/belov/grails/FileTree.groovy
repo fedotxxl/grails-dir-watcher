@@ -10,8 +10,7 @@ class FileTree {
     private Map<File, List> children = [:].withDefault {[]}
 
     void add(File f) {
-        def file = FileUtils.getNormalizedFile(f)
-        processFile(root, file)
+        processFile(root, FileUtils.getNormalizedFile(f))
     }
 
     private processFile(List root, File file) {

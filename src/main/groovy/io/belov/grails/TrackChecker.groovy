@@ -26,6 +26,7 @@ class TrackChecker {
         return isTrackChecker(file.toPath())
     }
 
+    private static final WAIT_FOR_EVENT_DELAY = 500
     private executor = Executors.newCachedThreadPool()
     private DirectoryWatcher watcher
     private Map trackedFiles = new ConcurrentHashMap()
@@ -73,14 +74,14 @@ class TrackChecker {
 
         trackedFiles.remove(path)
 
-        sleep(500)
+        sleep(WAIT_FOR_EVENT_DELAY)
 
         return trackedFiles.remove(path)
     }
 
     private generateTouchFile(File folder) {
         File file = getNonExistingFile(folder)
-        File touch = new File(file.canonicalPath + TrackChecker.TRACK_CHECKER_EXTENSION)
+        File touch = new File(file.canonicalPath + TRACK_CHECKER_EXTENSION)
 
         return touch
     }

@@ -4,7 +4,6 @@
  */
 package io.belov.grails.watchers
 import groovy.util.logging.Slf4j
-import io.belov.grails.FiltersContainer
 import io.belov.grails.filters.AllFilesFilter
 import io.belov.grails.filters.ParentFilter
 import io.belov.grails.filters.SingleFileFilter
@@ -17,16 +16,6 @@ import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
 
 @Slf4j
 class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
-
-    private FiltersContainer filtersContainer = new FiltersContainer()
-
-    public RecursiveDirectoryWatcher() {
-        try {
-            this.watcher = FileSystems.getDefault().newWatchService();
-        } catch (IOException e) {
-            log.error("Exception on MyDirectoryWatcher startup", e);
-        }
-    }
 
     /**
      * Adds a file to the watch list
@@ -127,8 +116,8 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
     void startAsync() {
         log.info("Start watching file changes")
 
-        startEventsQueue()
-        startWatchingFileChanges()
+        startAsyncEventsQueue()
+        startAsyncWatchingFileChanges()
     }
 
     @Override
@@ -147,8 +136,4 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
         }
     }
 
-    @Override
-    protected isStopOnEmptyWatchList() {
-        return false
-    }
 }

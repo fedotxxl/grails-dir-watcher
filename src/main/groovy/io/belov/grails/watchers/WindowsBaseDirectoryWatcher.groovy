@@ -5,11 +5,8 @@
 package io.belov.grails.watchers
 import groovy.util.logging.Slf4j
 import io.belov.grails.FileUtils
-import io.belov.grails.FiltersContainer
 import io.belov.grails.filters.AllFilesFilter
 import io.belov.grails.filters.SingleFileFilter
-
-import java.nio.file.FileSystems
 
 import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
 
@@ -17,21 +14,16 @@ import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
 class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
 
     private File base
-    private FiltersContainer filtersContainer = new FiltersContainer()
 
     WindowsBaseDirectoryWatcher(File base, Boolean watchForAnyChanges = false) {
-        this.watcher = FileSystems.getDefault().newWatchService();
+        super()
         this.base = FileUtils.getNormalizedFile(base)
         if (watchForAnyChanges) addWatchDirectory(base, AllFilesFilter.instance)
     }
 
     @Override
     DirectoryWatcher addWatchFile(File fileToWatch) {
-        if (isWatchableDirectory(fileToWatch.parentFile)) {
-            filtersContainer.addFilterForFolder(fileToWatch.parentFile, new SingleFileFilter(fileToWatch))
-        } else {
-            log.error "File ${fileToWatch} is not child of ${base}"
-        }
+        addWatchDirectory(fileToWatch.parentFile, new SingleFileFilter(fileToWatch))
 
         return this
     }
@@ -51,13 +43,8 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
     void startAsync() {
         log.debug("Start watching changes in base dir ${base}")
         trackBaseDirectory()
-        startEventsQueue()
-        startWatchingFileChanges()
-    }
-
-    @Override
-    protected processCreatedFolder(File file) {
-        //do nothing
+        startAsyncEventsQueue()
+        startAsyncWatchingFileChanges()
     }
 
     @Override
@@ -69,11 +56,6 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
         } else {
             return false
         }
-    }
-
-    @Override
-    protected isStopOnEmptyWatchList() {
-        return false
     }
 
     private trackBaseDirectory() {

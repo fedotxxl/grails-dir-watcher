@@ -6,25 +6,20 @@ import io.belov.grails.FiltersContainer
 import io.belov.grails.TrackChecker
 import io.belov.grails.filters.SingleFileFilter
 
-import java.nio.file.FileVisitResult
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.StandardWatchEventKinds
+import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 
 import static io.belov.grails.FileUtils.getNormalizedFile
 
 @Slf4j
 class SavedDirectoryWatcher implements DirectoryWatcher {
 
-    protected List<File> dirs = []
+    protected List<File> observableFolders = []
     private TriggerableDirectoryWatcher watcher
     protected TrackChecker trackChecker
     protected Integer sleepTime = 5000
-    protected Boolean active = true
+    protected volatile Boolean active = true
     protected FiltersContainer filtersContainer = new FiltersContainer()
 
     SavedDirectoryWatcher(TriggerableDirectoryWatcher watcher) {
@@ -44,11 +39,11 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     }
 
     @Override
-    DirectoryWatcher addWatchFile(File fileToWatch) {
-        if (fileToWatch.exists()) {
-            watcher.addWatchFile(fileToWatch)
+    DirectoryWatcher addWatchFile(File file) {
+        if (file.exists()) {
+            watcher.addWatchFile(file)
         } else {
-            addWatchDirectory(fileToWatch.parentFile, new SingleFileFilter(fileToWatch))
+            addWatchDirectory(file.parentFile, new SingleFileFilter(file))
         }
 
         return this
@@ -58,7 +53,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     DirectoryWatcher addWatchDirectory(File dir, io.belov.grails.filters.FileFilter filter = null) {
         def folder = getNormalizedFile(dir)
 
-        dirs << folder
+        observableFolders << folder
         filtersContainer.addFilterForFolder(folder, filter)
 
         if (folder.exists() && folder.directory) {
@@ -82,7 +77,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
 
     protected watchUnwatchedDirsWithFilters() {
         try {
-            def futures = dirs.collect() { File folder ->
+            def futures = observableFolders.collect() { File folder ->
                 if (folder.exists() && folder.directory) {
                     return trackChecker.isFolderTracked(folder)
                 } else {
@@ -96,12 +91,12 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
             futures.eachWithIndex { Future future, i ->
                 if (future) {
                     try {
-                        def isTracked = future.get(1, TimeUnit.SECONDS)
+                        def isTracked = future.get()
                         if (!isTracked) {
-                            foldersToTrack << dirs[i]
+                            foldersToTrack << observableFolders[i]
                         }
                     } catch (e) {
-                        log.warn "Exception on checking track folder ${dirs[i]}", e
+                        log.warn "Exception on checking track folder ${observableFolders[i]}", e
                     }
                 }
             }
@@ -139,7 +134,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
 
             public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException
             {
-                def file = pathToFile(path)
+                def file = getNormalizedFile(path.toFile())
                 if (filters.accept(file)) {
                     triggerCreateEvent(file)
                 }
@@ -151,9 +146,5 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     private triggerCreateEvent(File file) {
         log.debug "Triggering create event for remembered file {}", file
         watcher.triggerEvent(file, StandardWatchEventKinds.ENTRY_CREATE)
-    }
-
-    private pathToFile(Path path) {
-        return getNormalizedFile(path.toFile())
     }
 }

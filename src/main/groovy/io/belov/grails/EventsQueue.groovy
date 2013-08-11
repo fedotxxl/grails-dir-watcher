@@ -3,25 +3,22 @@
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
 package io.belov.grails
-
 import groovy.util.logging.Slf4j
 
 import java.nio.file.WatchEvent
-import java.util.concurrent.ConcurrentHashMap
-import static java.nio.file.StandardWatchEventKinds.*
 
+import static java.nio.file.StandardWatchEventKinds.*
 
 @Slf4j
 class EventsQueue {
 
     private static final int EVENTS_DELAY = 50
-    private final Map<File, Map> events = [:] as ConcurrentHashMap
+    private final Map<File, Map> events = [:]
     private List<FileChangeListener> listeners = []
     private volatile boolean active = true;
 
-
-    void setActive(boolean active) {
-        this.active = active
+    void stop() {
+        this.active = false
     }
 
     public void addListener(FileChangeListener listener) {
