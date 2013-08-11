@@ -4,10 +4,10 @@
  */
 package io.belov.grails.filters
 
-class CompositeFilter implements FileFilter {
+class CompositeFilter implements WatchableFileFilter {
     private filters = [] as Set
 
-    void add(FileFilter filter) {
+    void add(WatchableFileFilter filter) {
         if (filter) {
             filters << filter
         }
@@ -22,7 +22,7 @@ class CompositeFilter implements FileFilter {
         }
     }
 
-    Set<FileFilter> getFilters() {
+    Set<WatchableFileFilter> getFilters() {
         return this.@filters
     }
 

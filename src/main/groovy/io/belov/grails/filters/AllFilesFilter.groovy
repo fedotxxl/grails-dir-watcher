@@ -5,7 +5,7 @@
 package io.belov.grails.filters
 
 @Singleton
-class AllFilesFilter implements FileFilter {
+class AllFilesFilter implements WatchableFileFilter {
 
     @Override
     boolean accept(File file) {

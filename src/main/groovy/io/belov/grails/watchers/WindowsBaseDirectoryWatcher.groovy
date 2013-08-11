@@ -7,6 +7,7 @@ import groovy.util.logging.Slf4j
 import io.belov.grails.FileUtils
 import io.belov.grails.filters.AllFilesFilter
 import io.belov.grails.filters.SingleFileFilter
+import io.belov.grails.filters.WatchableFileFilter
 
 import static com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE
 
@@ -29,7 +30,7 @@ class WindowsBaseDirectoryWatcher extends AbstractDirectoryWatcher {
     }
 
     @Override
-    DirectoryWatcher addWatchDirectory(File dir, io.belov.grails.filters.FileFilter f = null) {
+    DirectoryWatcher addWatchDirectory(File dir, WatchableFileFilter f = null) {
         if (isWatchableDirectory(dir)) {
             filtersContainer.addFilterForFolder(dir, f)
         } else {

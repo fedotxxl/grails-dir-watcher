@@ -7,6 +7,7 @@ import groovy.util.logging.Slf4j
 import io.belov.grails.filters.AllFilesFilter
 import io.belov.grails.filters.ParentFilter
 import io.belov.grails.filters.SingleFileFilter
+import io.belov.grails.filters.WatchableFileFilter
 import org.apache.commons.lang.SystemUtils
 
 import java.nio.file.*
@@ -38,7 +39,7 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
      * @param fileExtensions The extensions
      */
     @Override
-    public DirectoryWatcher addWatchDirectory(File dir, io.belov.grails.filters.FileFilter f = null) {
+    public DirectoryWatcher addWatchDirectory(File dir, WatchableFileFilter f = null) {
         def filter = f ?: AllFilesFilter.instance
 
         if (SystemUtils.IS_OS_WINDOWS) {
@@ -54,7 +55,7 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
      * Register the given directory with the WatchService
      * @param filter - null equals check parent directories
      */
-    private void register(File file, io.belov.grails.filters.FileFilter filter = null) {
+    private void register(File file, WatchableFileFilter filter = null) {
         try {
             def path = file.toPath()
             if (file.exists()) {
@@ -88,7 +89,7 @@ class RecursiveDirectoryWatcher extends AbstractDirectoryWatcher {
      * Register the given directory, and all its sub-directories, with the
      * WatchService.
      */
-    private void registerAll(final File start, io.belov.grails.filters.FileFilter filter = null) {
+    private void registerAll(final File start, WatchableFileFilter filter = null) {
         // register directory and sub-directories
         def path = start.toPath()
         try {

@@ -5,6 +5,7 @@ import io.belov.grails.FileTree
 import io.belov.grails.FiltersContainer
 import io.belov.grails.TrackChecker
 import io.belov.grails.filters.SingleFileFilter
+import io.belov.grails.filters.WatchableFileFilter
 
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
@@ -50,7 +51,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     }
 
     @Override
-    DirectoryWatcher addWatchDirectory(File dir, io.belov.grails.filters.FileFilter filter = null) {
+    DirectoryWatcher addWatchDirectory(File dir, WatchableFileFilter filter = null) {
         def folder = getNormalizedFile(dir)
 
         observableFolders << folder
@@ -123,7 +124,7 @@ class SavedDirectoryWatcher implements DirectoryWatcher {
     protected iterateFolderAndTriggerCreateEvent(File folder) {
         log.trace "Triggering create event for remembered folder {}", folder
 
-        io.belov.grails.filters.FileFilter filters = filtersContainer.getFilterForFolder(folder)
+        WatchableFileFilter filters = filtersContainer.getFilterForFolder(folder)
 
         Files.walkFileTree(folder.toPath(), new SimpleFileVisitor<Path>() {
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException

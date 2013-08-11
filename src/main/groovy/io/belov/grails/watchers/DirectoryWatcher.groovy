@@ -1,6 +1,7 @@
 package io.belov.grails.watchers
 
 import io.belov.grails.FileChangeListener
+import io.belov.grails.filters.WatchableFileFilter
 
 public interface DirectoryWatcher {
 
@@ -24,7 +25,7 @@ public interface DirectoryWatcher {
      * @param dir The directory
      * @param fileExtensions The extensions
      */
-    DirectoryWatcher addWatchDirectory(File dir, io.belov.grails.filters.FileFilter f);
+    DirectoryWatcher addWatchDirectory(File dir, WatchableFileFilter f);
 
     /**
      * Starts watching process

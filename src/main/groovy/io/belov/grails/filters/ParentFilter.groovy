@@ -8,7 +8,7 @@ package io.belov.grails.filters
 /**
  * Just marks to use parent filter
  */
-class ParentFilter implements FileFilter {
+class ParentFilter implements WatchableFileFilter {
 
     @Override
     boolean accept(File file) {

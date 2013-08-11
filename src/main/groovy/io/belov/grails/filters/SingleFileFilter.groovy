@@ -4,7 +4,7 @@
  */
 package io.belov.grails.filters
 
-class SingleFileFilter implements FileFilter {
+class SingleFileFilter implements WatchableFileFilter {
 
     private File file
 

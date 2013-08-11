@@ -4,7 +4,7 @@
  */
 package io.belov.grails.filters
 
-class EndsWithFilter implements FileFilter {
+class EndsWithFilter implements WatchableFileFilter {
 
     private String end
 

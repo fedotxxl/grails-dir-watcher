@@ -5,7 +5,7 @@
 package io.belov.grails.filters
 import org.apache.commons.io.FilenameUtils
 
-class FileExtensionFilter implements FileFilter {
+class FileExtensionFilter implements WatchableFileFilter {
 
     private String extension
 

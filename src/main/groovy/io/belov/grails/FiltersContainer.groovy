@@ -7,6 +7,7 @@ package io.belov.grails
 import io.belov.grails.filters.AllFilesFilter
 import io.belov.grails.filters.CompositeFilter
 import io.belov.grails.filters.ParentFilter
+import io.belov.grails.filters.WatchableFileFilter
 
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
@@ -15,7 +16,7 @@ class FiltersContainer {
 
     private final Map<String, CompositeFilter> dirsWithFilters = new ConcurrentHashMap<>()
 
-    void addFilterForFolder(File folder, io.belov.grails.filters.FileFilter filter) {
+    void addFilterForFolder(File folder, WatchableFileFilter filter) {
         synchronized (dirsWithFilters) {
             def compositeFilter = dirsWithFilters[folder.canonicalPath]
             if (!compositeFilter) {
@@ -27,7 +28,7 @@ class FiltersContainer {
         }
     }
 
-    void addFilterForFolder(Path folder, io.belov.grails.filters.FileFilter filter) {
+    void addFilterForFolder(Path folder, WatchableFileFilter filter) {
         addFilterForFolder(folder.toFile(), filter)
     }
 
