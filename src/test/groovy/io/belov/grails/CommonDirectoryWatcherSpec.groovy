@@ -6,9 +6,10 @@ package io.belov.grails
 import groovy.util.logging.Slf4j
 import io.belov.grails.filters.EndsWithFilter
 import io.belov.grails.filters.FileExtensionFilter
+import io.belov.grails.utils.DirectoryWatcherTestHelper
+import io.belov.grails.utils.EventsCollector
 import io.belov.grails.watchers.RecursiveDirectoryWatcher
 import io.belov.grails.watchers.SavedDirectoryWatcher
-import io.belov.grails.watchers.SavedRecursiveDirectoryWatcher
 import io.belov.grails.watchers.WindowsBaseDirectoryWatcher
 import org.apache.commons.io.FileUtils as ApacheFileUtils
 import org.apache.commons.lang.SystemUtils
@@ -16,7 +17,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static CommonDirectoryWatcherTestHelper.WAIT_FOR_CHANGES_DELAY
+import static io.belov.grails.utils.DirectoryWatcherTestHelper.WAIT_FOR_CHANGES_DELAY
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 
@@ -24,7 +25,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 class CommonDirectoryWatcherSpec extends Specification {
 
     @Shared
-    private CommonDirectoryWatcherTestHelper directoryWatcherSpec = new CommonDirectoryWatcherTestHelper()
+    private DirectoryWatcherTestHelper directoryWatcherSpec = new DirectoryWatcherTestHelper()
     @Shared
     private File testFolder = directoryWatcherSpec.testFolder
 
@@ -79,9 +80,7 @@ class CommonDirectoryWatcherSpec extends Specification {
         }
 
         where:
-        getWatcher <<
-                [{ folder -> WindowsWatcher(folder)
-                }, { folder -> new RecursiveDirectoryWatcher() }]
+        getWatcher << [{ folder -> WindowsWatcher(folder)}, { folder -> new RecursiveDirectoryWatcher() }]
     }
 
     @Unroll
@@ -110,9 +109,7 @@ class CommonDirectoryWatcherSpec extends Specification {
         }
 
         where:
-        getWatcher <<
-                [{ folder -> WindowsWatcher(folder)
-                }, { folder -> new RecursiveDirectoryWatcher() }]
+        getWatcher << [{ folder -> WindowsWatcher(folder)}, { folder -> new RecursiveDirectoryWatcher() }]
     }
 
     @Unroll
@@ -199,60 +196,6 @@ class CommonDirectoryWatcherSpec extends Specification {
                     WindowsWatcher(folder)
                 }, { folder ->
                     new RecursiveDirectoryWatcher()
-                }]
-    }
-
-    def "test restore tracked folder state with content"() {
-        setup:
-        def events
-        def fileNameA = 'abc.txt'
-        def fileNameB = 'efg.tmp'
-        def subfolderName = 'c'
-
-        def folderA = new File(testFolder, "./a/")
-        def folderB = new File(testFolder, "./b/")
-
-        folderA.mkdirs()
-        folderB.mkdirs()
-
-        expect:
-        def getter = getWatcher
-        def watcher = getter(folderA)
-
-        if (watcher) {
-            watcher.startAsync()
-
-            //check folder a is tacked and then delete it
-            assert directoryWatcherSpec.checkFolderIsTracked(watcher, folderA)
-            folderA.delete()
-
-            def eventsCollector = new EventsCollector(watcher)
-
-            //let's create few files
-            ApacheFileUtils.touch(folderB << fileNameA)
-            ApacheFileUtils.touch(folderB << subfolderName << fileNameB)
-
-            //check that folderB is not tracked
-            assert directoryWatcherSpec.checkFolderIsNotTracked(watcher, folderB)
-
-            //move watched folder
-            ApacheFileUtils.moveDirectory(folderB, folderA)
-
-            //wait and check events
-            events = eventsCollector.sleepAndGetEventsForLastMs(delay + WAIT_FOR_CHANGES_DELAY)
-            assert directoryWatcherSpec.checkEvents(folderA, [fileNameA], [ENTRY_CREATE], events)
-            assert directoryWatcherSpec.checkEvents(folderA << subfolderName, [fileNameB], [ENTRY_CREATE], events)
-
-            watcher.stop()
-        }
-
-        assert true
-
-        where:
-        delay << [6000]
-        getWatcher <<
-                [{ folder ->
-                    new SavedRecursiveDirectoryWatcher().addWatchDirectory(folder)
                 }]
     }
 

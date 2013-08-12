@@ -2,28 +2,16 @@
  * WindowsBaseDirectoryWatcherSpec
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails
+package io.belov.grails.runners
 import groovy.util.logging.Slf4j
 import io.belov.grails.filters.FileExtensionFilter
 import io.belov.grails.watchers.WindowsBaseDirectoryWatcher
-import spock.lang.Shared
+import spock.lang.Ignore
 import spock.lang.Specification
 
 @Slf4j
-class WindowsBaseDirectoryWatcherSpec extends Specification {
-
-    @Shared
-    private CommonDirectoryWatcherTestHelper directoryWatcherSpec = new CommonDirectoryWatcherTestHelper()
-    @Shared
-    private File testFolder = directoryWatcherSpec.testFolder
-
-    def setup() {
-        testFolder.mkdirs()
-    }
-
-    def cleanup() {
-        testFolder.deleteDir()
-    }
+@Ignore
+class WindowsBaseDirectoryWatcherRunner extends Specification {
 
     def "simple test"() {
         when:

@@ -2,8 +2,9 @@
  * CommonDirectoryWatcherSpec
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails
+package io.belov.grails.utils
 import groovy.util.logging.Slf4j
+import io.belov.grails.FileUtils
 import io.belov.grails.watchers.DirectoryWatcher
 import org.apache.commons.io.FileUtils as ApacheFileUtils
 
@@ -13,13 +14,9 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 
 @Slf4j
-class CommonDirectoryWatcherTestHelper {
+class DirectoryWatcherTestHelper {
 
     static {
-        File.metaClass.sub = { name ->
-            return new File(delegate, name)
-        }
-
         File.metaClass.leftShift = {
             return new File(delegate, it)
         }

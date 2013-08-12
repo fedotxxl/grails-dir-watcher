@@ -2,12 +2,14 @@
  * RecursiveDirectoryWatcherSpec
  * Copyright (c) 2012 Cybervision. All rights reserved.
  */
-package io.belov.grails
+package io.belov.grails.runners
 import io.belov.grails.filters.FileExtensionFilter
 import io.belov.grails.watchers.RecursiveDirectoryWatcher
+import spock.lang.Ignore
 import spock.lang.Specification
 
-class RecursiveDirectoryWatcherSpec extends Specification {
+@Ignore
+class RecursiveDirectoryWatcherRunner extends Specification {
 
     def "simple watcher test"() {
         when:
